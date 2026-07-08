@@ -278,50 +278,52 @@
 
       {{-- Boutons action --}}
       <div class="flex gap-2 pb-2 desktop-only">
-        @if(auth()->id() === $user->id)
-          <a href="{{ route('profil.edit') }}"
-             class="flex items-center gap-1.5 px-4 py-2 bg-ardoise text-kraft text-sm font-medium rounded-lg hover:bg-ardoise-light transition-colors">
-            <i class="ti ti-edit"></i> Modifier le profil
-          </a>
-          <button class="flex items-center gap-1.5 px-3 py-2 border border-ardoise/40 text-ardoise text-sm rounded-lg hover:bg-ardoise/5 transition-colors">
-            <i class="ti ti-share"></i> Partager
-          </button>
-        @else
-          @if($isFriend)
-            <a href="{{ route('messages.conversation', $user->handle ?? $user->id) }}" class="flex items-center gap-1.5 px-4 py-2 bg-ardoise text-kraft text-sm font-medium rounded-lg hover:bg-ardoise-light transition-colors">
-              <i class="ti ti-mail"></i> Envoyer un message
+        <div class="friend-action-wrapper flex items-center gap-2">
+          @if(auth()->id() === $user->id)
+            <a href="{{ route('profil.edit') }}"
+               class="flex items-center gap-1.5 px-4 py-2 bg-ardoise text-kraft text-sm font-medium rounded-lg hover:bg-ardoise-light transition-colors">
+              <i class="ti ti-edit"></i> Modifier le profil
             </a>
-            <div class="flex items-center gap-1.5 rounded-lg border border-ardoise/20 bg-white/70 px-3 py-2 text-sm text-sauge">
-              <i class="ti ti-user-check"></i> Ami
-            </div>
-          @elseif($requestStatus === 'pending' && $friendRequest && $friendRequest->sender_id === auth()->id())
-            <div class="flex items-center gap-1.5 rounded-lg border border-ardoise/20 bg-white/70 px-3 py-2 text-sm text-gray-600">
-              <i class="ti ti-clock"></i> Invitation envoyée
-            </div>
-          @elseif($requestStatus === 'pending' && $friendRequest && $friendRequest->receiver_id === auth()->id())
-            <div class="flex gap-2">
-              <form class="friend-action-form" action="{{ route('friend.requests.accept', $friendRequest->id) }}" method="POST">
-                @csrf
-                <button type="submit" data-success-text="Acceptée" class="flex items-center gap-1.5 px-4 py-2 bg-ardoise text-kraft text-sm font-medium rounded-lg hover:bg-ardoise-light transition-colors">
-                  <i class="ti ti-check"></i> Accepter
-                </button>
-              </form>
-              <form class="friend-action-form" action="{{ route('friend.requests.decline', $friendRequest->id) }}" method="POST">
-                @csrf
-                <button type="submit" data-success-text="Refusée" class="flex items-center gap-1.5 px-4 py-2 border border-ardoise/40 text-ardoise text-sm rounded-lg hover:bg-ardoise/5 transition-colors">
-                  <i class="ti ti-x"></i> Refuser
-                </button>
-              </form>
-            </div>
+            <button class="flex items-center gap-1.5 px-3 py-2 border border-ardoise/40 text-ardoise text-sm rounded-lg hover:bg-ardoise/5 transition-colors">
+              <i class="ti ti-share"></i> Partager
+            </button>
           @else
-            <form class="friend-action-form" action="{{ route('friend.requests.send', $user->handle ?? $user->id) }}" method="POST">
-              @csrf
-              <button type="submit" data-success-text="Invitation envoyée" class="flex items-center gap-1.5 px-4 py-2 bg-moutarde text-ardoise text-sm font-medium rounded-lg hover:bg-moutarde/90 transition-colors">
-                <i class="ti ti-user-plus"></i> Ajouter comme ami
-              </button>
-            </form>
+            @if($isFriend)
+              <a href="{{ route('messages.conversation', $user->handle ?? $user->id) }}" class="flex items-center gap-1.5 px-4 py-2 bg-ardoise text-kraft text-sm font-medium rounded-lg hover:bg-ardoise-light transition-colors">
+                <i class="ti ti-mail"></i> Envoyer un message
+              </a>
+              <div class="flex items-center gap-1.5 rounded-lg border border-ardoise/20 bg-white/70 px-3 py-2 text-sm text-sauge">
+                <i class="ti ti-user-check"></i> Ami(e)
+              </div>
+            @elseif($requestStatus === 'pending' && $friendRequest && $friendRequest->sender_id === auth()->id())
+              <div class="flex items-center gap-1.5 rounded-lg border border-ardoise/20 bg-white/70 px-3 py-2 text-sm text-gray-600">
+                <i class="ti ti-clock"></i> Invitation envoyée
+              </div>
+            @elseif($requestStatus === 'pending' && $friendRequest && $friendRequest->receiver_id === auth()->id())
+              <div class="friend-action-wrapper flex gap-2">
+                <form class="friend-action-form" action="{{ route('friend.requests.accept', $friendRequest->id) }}" method="POST">
+                  @csrf
+                  <button type="submit" data-success-text="Acceptée" class="flex items-center gap-1.5 px-4 py-2 bg-ardoise text-kraft text-sm font-medium rounded-lg hover:bg-ardoise-light transition-colors">
+                    <i class="ti ti-check"></i> Accepter
+                  </button>
+                </form>
+                <form class="friend-action-form" action="{{ route('friend.requests.decline', $friendRequest->id) }}" method="POST">
+                  @csrf
+                  <button type="submit" data-success-text="Refusée" class="flex items-center gap-1.5 px-4 py-2 border border-ardoise/40 text-ardoise text-sm rounded-lg hover:bg-ardoise/5 transition-colors">
+                    <i class="ti ti-x"></i> Refuser
+                  </button>
+                </form>
+              </div>
+            @else
+              <form class="friend-action-form" action="{{ route('friend.requests.send', $user->handle ?? $user->id) }}" method="POST">
+                @csrf
+                <button type="submit" data-success-text="Invitation envoyée" class="flex items-center gap-1.5 px-4 py-2 bg-moutarde text-ardoise text-sm font-medium rounded-lg hover:bg-moutarde/90 transition-colors">
+                  <i class="ti ti-user-plus"></i> Ajouter comme ami
+                </button>
+              </form>
+            @endif
           @endif
-        @endif
+        </div>
         <button class="flex items-center px-3 py-2 border border-ardoise/40 text-ardoise text-sm rounded-lg hover:bg-ardoise/5 transition-colors">
           <i class="ti ti-dots"></i>
         </button>
@@ -401,7 +403,7 @@
       <button class="tab-btn" data-tab="apropos" role="tab">À propos</button>
       <button class="tab-btn" data-tab="groupes" role="tab">Groupes</button>
       <button class="tab-btn" data-tab="evenements" role="tab">Événements</button>
-      <button class="tab-btn" data-tab="activite" role="tab">Activité</button>
+      <!-- Activité tab removed -->
       <button class="tab-btn" data-tab="amis" role="tab">Amis</button>
     </div>
   </div>
@@ -601,7 +603,7 @@
                 placeholder="Quoi de neuf sur le campus ?"></textarea>
             </div>
             <div class="flex items-center justify-between border-t border-kraft-dark/30 pt-3">
-              <div class="flex gap-3">
+              <div class="flex flex-wrap items-center gap-3">
                 <label class="flex items-center gap-1.5 text-xs text-sauge cursor-pointer hover:text-sauge-dark transition-colors">
                   <i class="ti ti-photo"></i> Photo
                   <input type="file" name="media" accept="image/*,video/*" class="hidden">
@@ -612,6 +614,14 @@
                 <span class="flex items-center gap-1.5 text-xs text-sauge cursor-pointer hover:text-sauge-dark transition-colors">
                   <i class="ti ti-briefcase"></i> Stage
                 </span>
+                <label class="flex items-center gap-1.5 text-xs text-gray-600">
+                  <i class="ti ti-eye"></i>
+                  <select name="visibilite" class="rounded-lg border border-kraft-dark/30 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-moutarde/40">
+                    <option value="public">Public</option>
+                    <option value="amis">Amis</option>
+                    <option value="prive">Privé</option>
+                  </select>
+                </label>
               </div>
               <button type="submit"
                 class="flex items-center gap-1.5 px-4 py-1.5 bg-ardoise text-kraft text-xs font-medium rounded-lg hover:bg-ardoise-light transition-colors">
@@ -704,7 +714,7 @@
             <span class="post-like-count hidden"><i class="ti ti-heart-filled text-encre"></i></span>
             @endif
             @if($post->comments_count > 0)
-            <span class="post-comment-count">{{ $post->comments_count }} commentaire{{ $post->comments_count > 1 ? 's' : '' }}</span>
+            <a href="#post-{{ $post->id }}-comments" class="post-comment-count underline text-[#5E6E52]">{{ $post->comments_count }} commentaire{{ $post->comments_count > 1 ? 's' : '' }}</a>
             @else
             <span class="post-comment-count hidden">0 commentaire</span>
             @endif
@@ -725,17 +735,39 @@
                 <span class="post-action-label">J'aime</span>
               </button>
             </form>
-            <form class="post-action-form" action="{{ route('posts.comment', $post->id) }}" method="POST" style="flex:1;">
-              @csrf
-              <input type="hidden" name="contenu" value="Commentaire rapide">
-              <button type="submit" class="post-action-btn w-full">
-                <i class="ti ti-message-circle"></i> Commenter
-              </button>
-            </form>
             <form class="post-action-form" action="{{ route('posts.share', $post->id) }}" method="POST" style="flex:1;">
               @csrf
               <button type="submit" class="post-action-btn w-full">
                 <i class="ti ti-share-3"></i> Partager
+              </button>
+            </form>
+          </div>
+
+          <div class="px-4 pb-4 pt-3 space-y-2">
+            <div id="post-{{ $post->id }}-comments">
+            @if($post->comments->isNotEmpty())
+              @foreach($post->comments->sortByDesc('created_at') as $comment)
+              <div class="rounded-xl bg-gray-50 p-3 text-sm">
+                <div class="flex items-center justify-between gap-2">
+                  <p class="font-medium text-ardoise">
+                    {{ trim(($comment->user->prenom ?? '') . ' ' . ($comment->user->nom ?? '')) ?: 'Utilisateur' }}
+                  </p>
+                  <span class="text-xs text-gray-400">{{ $comment->created_at->diffForHumans() }}</span>
+                </div>
+                <p class="mt-1 text-gray-600">{{ $comment->contenu }}</p>
+              </div>
+              @endforeach
+            @endif
+            </div>
+
+            <form action="{{ route('posts.comment', $post->id) }}" method="POST" class="flex gap-2">
+              @csrf
+              <textarea name="contenu" rows="2" required maxlength="1000"
+                class="flex-1 resize-none rounded-xl border border-kraft-dark/30 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-moutarde/40"
+                placeholder="Écrire un commentaire..."></textarea>
+              <button type="submit"
+                class="rounded-xl bg-ardoise px-3 py-2 text-sm font-medium text-kraft hover:bg-ardoise-light transition-colors">
+                Envoyer
               </button>
             </form>
           </div>
@@ -860,6 +892,17 @@
       </div>
 
       @if(auth()->id() === $user->id)
+      <div class="mb-4 flex justify-end gap-3">
+        <a href="{{ route('evenements.index') }}" class="rounded-xl bg-[#5E6E52] px-4 py-2 text-sm font-semibold text-kraft hover:bg-[#1F2E26] transition-colors">
+          <i class="ti ti-calendar-event"></i> Événements
+        </a>
+        <a href="{{ route('evenements.create') }}" class="rounded-xl bg-[#E2A33B] px-4 py-2 text-sm font-semibold text-ardoise hover:bg-[#C98826] transition-colors">
+          <i class="ti ti-calendar-plus"></i> Créer un événement
+        </a>
+        <button type="button" onclick="document.getElementById('create-group-modal').classList.remove('hidden')" class="rounded-xl bg-ardoise px-4 py-2 text-sm font-semibold text-kraft hover:bg-ardoise-light transition-colors">
+          <i class="ti ti-plus"></i> Créer un groupe
+        </button>
+      </div>
       <div id="create-group-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
         <div class="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl border border-kraft-dark/40">
           <div class="flex items-center justify-between mb-4">
@@ -956,31 +999,7 @@
         @endif
       </div>
 
-      {{-- ─── ONGLET : ACTIVITÉ --}}
-      <div class="tab-panel" id="tab-activite">
-        <div class="bg-kraft-light border border-kraft-dark/40 rounded-xl p-4 space-y-6">
-          <div>
-            <h3 class="text-sm font-semibold text-ardoise flex items-center gap-2 mb-4">
-              <i class="ti ti-activity text-sauge"></i> Activité récente
-            </h3>
-            <div class="space-y-0">
-              @forelse($activites ?? [] as $act)
-              <div class="flex gap-3 py-3 border-b border-kraft-dark/20 last:border-b-0">
-                <div class="w-2 h-2 rounded-full mt-2 shrink-0"
-                     style="background: {{ $act['couleur'] ?? '#E2A33B' }};"></div>
-                <div>
-                  <p class="text-sm text-gray-700 leading-snug">{!! $act['description'] !!}</p>
-                  <p class="text-xs text-gray-400 mt-0.5">{{ $act['temps'] }}</p>
-                </div>
-              </div>
-              @empty
-              <p class="text-sm text-gray-400 text-center py-8">Aucune activité récente.</p>
-              @endforelse
-            </div>
-          </div>
-
-        </div>
-      </div>
+      <!-- Activité panel removed -->
 
       {{-- ─── ONGLET : AMIS --}}
       <div class="tab-panel" id="tab-amis">
@@ -1088,22 +1107,43 @@
       event.preventDefault();
       const button = form.querySelector('button');
       const feedback = document.getElementById('friend-action-feedback');
+      const wrapper = form.closest('.friend-action-wrapper') || form.parentElement;
+
       if (button) {
         button.disabled = true;
       }
+
       const formData = new FormData(form);
       const response = await fetch(form.action, {
         method: 'POST',
         body: formData,
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
+
       if (response.ok) {
+        const data = await response.json().catch(() => null);
+        const state = data?.state || 'pending';
+        const message = data?.message || button?.dataset.successText || 'Action réalisée.';
+
         if (feedback) {
           feedback.classList.remove('hidden');
-          feedback.textContent = button?.dataset.successText || 'Action réalisée.';
+          feedback.textContent = message;
         }
+
+        if (state === 'accepted') {
+          if (wrapper) {
+            wrapper.innerHTML = `
+              <div class="flex items-center gap-1.5 rounded-lg border border-ardoise/20 bg-white/70 px-3 py-2 text-sm text-sauge">
+                <i class="ti ti-user-check"></i> Invitation acceptée
+              </div>`;
+          }
+          return;
+        }
+
         if (button) {
-          button.innerHTML = '<i class="ti ti-check"></i> ' + (button.dataset.successText || 'Terminé');
+          button.innerHTML = state === 'pending' && button.dataset.successText === 'Invitation envoyée'
+            ? '<i class="ti ti-clock"></i> Invitation envoyée'
+            : '<i class="ti ti-check"></i> ' + (button.dataset.successText || 'Terminé');
           button.classList.add('opacity-80');
         }
       } else if (feedback) {

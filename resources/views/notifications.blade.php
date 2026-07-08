@@ -44,14 +44,16 @@
               <div class="flex flex-wrap items-center gap-2">
                 @php $friendRequestId = $notification->friendRequestId(); @endphp
                 @if($notification->type === 'friend_request' && $friendRequestId)
-                  <form action="{{ route('friend.requests.accept', $friendRequestId) }}" method="POST" class="inline">
-                    @csrf
-                    <button type="submit" class="rounded-full bg-moutarde px-4 py-2 text-sm font-semibold text-ardoise hover:bg-moutarde/90 transition-colors">Accepter</button>
-                  </form>
-                  <form action="{{ route('friend.requests.decline', $friendRequestId) }}" method="POST" class="inline">
-                    @csrf
-                    <button type="submit" class="rounded-full border border-ardoise/20 px-4 py-2 text-sm text-ardoise hover:bg-ardoise/10 transition-colors">Refuser</button>
-                  </form>
+                  <div class="friend-action-wrapper flex flex-wrap items-center gap-2">
+                    <form action="{{ route('friend.requests.accept', $friendRequestId) }}" method="POST" class="friend-action-form inline">
+                      @csrf
+                      <button type="submit" class="rounded-full bg-moutarde px-4 py-2 text-sm font-semibold text-ardoise hover:bg-moutarde/90 transition-colors">Accepter</button>
+                    </form>
+                    <form action="{{ route('friend.requests.decline', $friendRequestId) }}" method="POST" class="friend-action-form inline">
+                      @csrf
+                      <button type="submit" class="rounded-full border border-ardoise/20 px-4 py-2 text-sm text-ardoise hover:bg-ardoise/10 transition-colors">Refuser</button>
+                    </form>
+                  </div>
                 @elseif($notification->type === 'friend_request')
                   <span class="text-sm text-gray-500">Demande déjà obsolète.</span>
                 @endif
@@ -71,6 +73,41 @@
   @push('scripts')
     <script>
       document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.friend-action-form').forEach(function (form) {
+          form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const wrapper = form.closest('.friend-action-wrapper');
+            const button = form.querySelector('button');
+            const formData = new FormData(form);
+
+            try {
+              const res = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                  'X-Requested-With': 'XMLHttpRequest',
+                  'Accept': 'application/json',
+                },
+              });
+
+              if (!res.ok) throw new Error('Erreur réseau');
+              const data = await res.json().catch(() => null);
+              const state = data?.state;
+
+              if (state === 'accepted' && wrapper) {
+                wrapper.innerHTML = '<span class="rounded-full bg-kraft-light px-4 py-2 text-sm text-sauge">Invitation acceptée</span>';
+              } else if (state === 'declined' && wrapper) {
+                wrapper.innerHTML = '<span class="rounded-full border border-ardoise/20 px-4 py-2 text-sm text-ardoise">Refusée</span>';
+              } else if (button) {
+                button.disabled = false;
+              }
+            } catch (err) {
+              console.error(err);
+              if (button) button.disabled = false;
+            }
+          });
+        });
+
         document.querySelectorAll('form.ajax-mark-read').forEach(function (form) {
           form.addEventListener('submit', async function (e) {
             e.preventDefault();

@@ -216,10 +216,11 @@ class AuthController extends Controller
             'evenements' => 0,
         ];
 
-        $postsQuery = Post::with(['auteur', 'groupe'])
+        $postsQuery = Post::with(['auteur', 'groupe', 'comments.user'])
             ->where('user_id', $user->id);
 
         if (! $isSelf && ! $isFriend) {
+            // Les publications publiques sont visibles par tous ; les autres sont réservées à l’auteur et à ses amis.
             $postsQuery->where('visibilite', 'public');
         }
 
@@ -230,7 +231,7 @@ class AuthController extends Controller
         $projets = collect();
         $groupes = $user->groups()->withCount('membres')->get();
         $evenements = collect();
-        $activites = [];
+        // activity section removed
         $documents = SocialMessage::with(['sender', 'receiver'])
             ->where(function ($query) use ($user) {
                 $query->where('sender_id', $user->id)
@@ -294,7 +295,6 @@ class AuthController extends Controller
             'projets',
             'groupes',
             'evenements',
-            'activites',
             'documents',
             'friends',
             'pendingFriendRequests',

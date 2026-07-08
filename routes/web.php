@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Evenement\EvenementController;
 use App\Http\Controllers\SocialController;
 
 Route::get('/', function () {
@@ -52,6 +53,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts/{id}/like', [SocialController::class, 'likePost'])->name('posts.like');
     Route::post('/posts/{id}/comment', [SocialController::class, 'commentPost'])->name('posts.comment');
     Route::post('/posts/{id}/share', [SocialController::class, 'sharePost'])->name('posts.share');
+    Route::get('/evenements', [EvenementController::class, 'index'])->name('evenements.index');
+    Route::get('/evenements/creer', [EvenementController::class, 'create'])->name('evenements.create');
+    Route::post('/evenements', [EvenementController::class, 'store'])->name('evenements.store');
+    Route::get('/evenements/{evenement}', [EvenementController::class, 'show'])->name('evenements.show');
+    Route::post('/evenements/{evenement}/like', [EvenementController::class, 'like'])->name('evenements.like');
+    Route::post('/evenements/{evenement}/comment', [EvenementController::class, 'comment'])->name('evenements.comment');
+    Route::post('/evenements/{evenement}/share', [EvenementController::class, 'share'])->name('evenements.share');
     Route::get('/profil/{handle?}', [AuthController::class, 'showProfil'])->name('profil.show');
 });
 

@@ -16,13 +16,13 @@ use Illuminate\Support\Str;
 
 class SocialController extends Controller
 {
-    public function sendFriendRequest(string $handle)
+    public function sendFriendRequest(Request $request, string $handle)
     {
         $sender = Auth::user();
         $receiver = User::where('handle', $handle)->orWhere('id', $handle)->firstOrFail();
 
         if ($sender->id === $receiver->id) {
-            return back()->with('status', 'Impossible de vous ajouter vous-même.');
+            return $this->friendRequestResponse($request, 'error', 'Impossible de vous ajouter vous-même.');
         }
 
         $existing = FriendRequest::where(function ($query) use ($sender, $receiver) {
@@ -35,15 +35,15 @@ class SocialController extends Controller
 
         if ($existing) {
             if ($existing->status === 'accepted') {
-                return back()->with('status', 'Vous êtes déjà amis.');
+                return $this->friendRequestResponse($request, 'accepted', 'Vous êtes déjà amis.');
             }
 
             if ($existing->status === 'pending') {
                 if ($existing->sender_id === $sender->id) {
-                    return back()->with('status', 'Demande déjà envoyée.');
+                    return $this->friendRequestResponse($request, 'pending', 'Demande déjà envoyée.');
                 }
 
-                return back()->with('status', 'Vous avez déjà reçu une invitation de cet utilisateur.');
+                return $this->friendRequestResponse($request, 'pending', 'Vous avez déjà reçu une invitation de cet utilisateur.');
             }
 
             if ($existing->status === 'declined') {
@@ -69,51 +69,63 @@ class SocialController extends Controller
             ],
         ]);
 
-        return back()->with('status', 'Demande d\'ami envoyée.');
+        return $this->friendRequestResponse($request, 'pending', 'Demande d\'ami envoyée.');
     }
 
-    public function acceptFriendRequest(int $id)
+    public function acceptFriendRequest(Request $httpRequest, int $id)
     {
-        $request = FriendRequest::find($id);
+        $friendRequest = FriendRequest::find($id);
 
-        if (! $request) {
-            return back()->with('status', 'Demande introuvable ou déjà traitée.');
+        if (! $friendRequest) {
+            return $this->friendRequestResponse($httpRequest, 'error', 'Demande introuvable ou déjà traitée.');
         }
 
-        if ($request->receiver_id !== Auth::id() || $request->status !== 'pending') {
-            return back()->with('status', 'Cette demande ne peut pas être acceptée.');
+        if ($friendRequest->receiver_id !== Auth::id() || $friendRequest->status !== 'pending') {
+            return $this->friendRequestResponse($httpRequest, 'error', 'Cette demande ne peut pas être acceptée.');
         }
 
-        $request->update(['status' => 'accepted']);
+        $friendRequest->update(['status' => 'accepted']);
 
         SocialNotification::create([
-            'user_id' => $request->sender_id,
+            'user_id' => $friendRequest->sender_id,
             'type' => 'friend_request_accepted',
             'data' => [
-                'receiver_id' => $request->receiver_id,
+                'receiver_id' => $friendRequest->receiver_id,
                 'receiver_name' => Auth::user()->name,
                 'receiver_handle' => Auth::user()->handle,
             ],
         ]);
 
-        return back()->with('status', 'Invitation acceptée.');
+        return $this->friendRequestResponse($httpRequest, 'accepted', 'Invitation acceptée.');
     }
 
-    public function declineFriendRequest(int $id)
+    public function declineFriendRequest(Request $httpRequest, int $id)
     {
-        $request = FriendRequest::find($id);
+        $friendRequest = FriendRequest::find($id);
 
-        if (! $request) {
-            return back()->with('status', 'Demande introuvable ou déjà traitée.');
+        if (! $friendRequest) {
+            return $this->friendRequestResponse($httpRequest, 'error', 'Demande introuvable ou déjà traitée.');
         }
 
-        if ($request->receiver_id !== Auth::id() || $request->status !== 'pending') {
-            return back()->with('status', 'Cette demande ne peut pas être refusée.');
+        if ($friendRequest->receiver_id !== Auth::id() || $friendRequest->status !== 'pending') {
+            return $this->friendRequestResponse($httpRequest, 'error', 'Cette demande ne peut pas être refusée.');
         }
 
-        $request->update(['status' => 'declined']);
+        $friendRequest->update(['status' => 'declined']);
 
-        return back()->with('status', 'Invitation refusée.');
+        return $this->friendRequestResponse($httpRequest, 'declined', 'Invitation refusée.');
+    }
+
+    private function friendRequestResponse(Request $request, string $state, string $message)
+    {
+        if ($request->expectsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return response()->json([
+                'state' => $state,
+                'message' => $message,
+            ]);
+        }
+
+        return back()->with('status', $message);
     }
 
     public function messages(Request $request)
@@ -128,10 +140,11 @@ class SocialController extends Controller
                 return $message->sender_id === $user->id ? $message->receiver_id : $message->sender_id;
             });
 
-        $threads = $conversations->map(function ($messages, $otherId) {
+        $threads = $conversations->map(function ($messages, $otherId) use ($user) {
             return [
                 'friend' => User::find($otherId),
                 'last' => $messages->first(),
+                'unreadCount' => $messages->where('receiver_id', $user->id)->whereNull('read_at')->count(),
             ];
         })->filter();
 
@@ -177,10 +190,11 @@ class SocialController extends Controller
                 ->get()
                 ->groupBy(function (SocialMessage $message) use ($user) {
                     return $message->sender_id === $user->id ? $message->receiver_id : $message->sender_id;
-                })->map(function ($messages, $otherId) {
+                })->map(function ($messages, $otherId) use ($user) {
                     return [
                         'friend' => User::find($otherId),
                         'last' => $messages->first(),
+                        'unreadCount' => $messages->where('receiver_id', $user->id)->whereNull('read_at')->count(),
                     ];
                 })->filter(),
             'selected' => $selected,
@@ -210,7 +224,7 @@ class SocialController extends Controller
     {
         $request->validate([
             'body' => 'nullable|string|max:2000',
-            'attachment' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,ppt,pptx,zip',
+            'attachment' => 'nullable|file|max:10240',
         ]);
 
         if (! $request->filled('body') && ! $request->hasFile('attachment')) {

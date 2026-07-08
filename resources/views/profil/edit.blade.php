@@ -1,67 +1,6 @@
 {{-- resources/views/profil/edit.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Modifier le profil — USN')
-
-@section('content')
-  <div class="mt-6 max-w-3xl mx-auto">
-    <h1 class="text-xl font-semibold text-ardoise mb-4">Modifier mon profil</h1>
-
-    <form action="{{ route('profil.update') }}" method="POST" enctype="multipart/form-data" class="space-y-4 bg-white/90 p-6 rounded-2xl border border-ardoise/10">
-      @csrf
-      @method('PATCH')
-
-      <div>
-        <label class="block text-sm font-medium text-ardoise mb-1">Bio</label>
-        <textarea name="bio" rows="4" class="w-full rounded-md border px-3 py-2">{{ old('bio', $user->bio) }}</textarea>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label class="block text-sm font-medium text-ardoise mb-1">Filière</label>
-          <input type="text" name="filiere" value="{{ old('filiere', $user->filiere) }}" class="w-full rounded-md border px-3 py-2">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-ardoise mb-1">Niveau</label>
-          <input type="text" name="niveau" value="{{ old('niveau', $user->niveau) }}" class="w-full rounded-md border px-3 py-2">
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-ardoise mb-1">Lien GitHub</label>
-        <input type="url" name="github" value="{{ old('github', $user->github) }}" class="w-full rounded-md border px-3 py-2">
-      </div>
-
-      <div class="space-y-2">
-        <h3 class="text-sm font-semibold text-ardoise">Confidentialité</h3>
-        <p class="text-xs text-gray-500">Choisissez quelles informations rendre privées.</p>
-
-        <div class="flex items-center gap-3 mt-3">
-          <label class="flex items-center gap-2">
-            <input type="checkbox" name="private_documents" {{ old('private_documents', $user->private_documents) ? 'checked' : '' }}>
-            <span class="text-sm">Documents privés</span>
-          </label>
-          <label class="flex items-center gap-2">
-            <input type="checkbox" name="private_friends" {{ old('private_friends', $user->private_friends) ? 'checked' : '' }}>
-            <span class="text-sm">Liste d'amis privée</span>
-          </label>
-          <label class="flex items-center gap-2">
-            <input type="checkbox" name="private_projects" {{ old('private_projects', $user->private_projects) ? 'checked' : '' }}>
-            <span class="text-sm">Projets privés</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="pt-3 border-t">
-        <button type="submit" class="px-4 py-2 bg-ardoise text-kraft rounded-lg">Enregistrer</button>
-        <a href="{{ route('profil.show') }}" class="ml-3 text-sm text-gray-500">Annuler</a>
-      </div>
-    </form>
-  </div>
-@endsection
-{{-- resources/views/profil/edit.blade.php --}}
-@extends('layouts.app')
-
 @section('title', 'Éditer le profil — USN')
 
 @section('content')
