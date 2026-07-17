@@ -167,7 +167,7 @@ class AuthController extends Controller
     public function showProfil($handle = null)
     {
         $user = $handle
-            ? User::where('handle', $handle)->orWhere('id', $handle)->firstOrFail()
+            ? User::findByHandleOrId($handle)
             : Auth::user();
         $current = Auth::user();
         $isSelf = $current->id === $user->id;

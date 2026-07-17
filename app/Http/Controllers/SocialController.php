@@ -174,7 +174,9 @@ class SocialController extends Controller
         $messages = collect();
 
         if ($request->filled('with')) {
-            $selected = User::where('handle', $request->query('with'))->first();
+            $selected = User::where('handle', $request->query('with'))
+                ->when(is_numeric($request->query('with')), fn ($query) => $query->orWhere('id', $request->query('with')))
+                ->first();
 
             if ($selected) {
                 $messages = SocialMessage::where(function ($query) use ($user, $selected) {

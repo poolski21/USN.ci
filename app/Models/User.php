@@ -61,6 +61,13 @@ class User extends Authenticatable
         return self::whereIn('id', $sent->merge($received));
     }
 
+    public static function findByHandleOrId(string $value)
+    {
+        return self::where('handle', $value)
+            ->when(is_numeric($value), fn ($query) => $query->orWhere('id', $value))
+            ->firstOrFail();
+    }
+
     public function groups()
     {
         return $this->belongsToMany(Group::class, 'group_user')->withTimestamps();

@@ -190,9 +190,11 @@
     .stat-band { grid-template-columns: repeat(3, 1fr); }
     .stat-item:nth-child(3) { border-right: none; }
     .stat-item:nth-child(4), .stat-item:nth-child(5) { border-top: 1px solid #D4CABC; }
-    .desktop-only { display: none !important; }
   }
   @media (max-width: 640px) {
+    .stat-band { grid-template-columns: repeat(2, 1fr); }
+    .stat-item:nth-child(4), .stat-item:nth-child(5) { border-top: 1px solid #D4CABC; }
+    .stat-item:nth-child(5) { grid-column: 1 / -1; }
     .avatar-ring { width: 84px; height: 84px; font-size: 28px; margin-top: -42px; }
     .cover-zone { height: 160px; }
   }
@@ -300,8 +302,8 @@
       </div>
 
       {{-- Boutons action --}}
-      <div class="flex gap-2 pb-2 desktop-only">
-        <div class="friend-action-wrapper flex items-center gap-2">
+      <div class="flex flex-wrap gap-2 pb-2">
+        <div class="friend-action-wrapper flex flex-wrap items-center gap-2">
           @if(auth()->id() === $user->id)
             <a href="{{ route('profil.edit') }}"
                class="flex items-center gap-1.5 px-4 py-2 bg-ardoise text-kraft text-sm font-medium rounded-lg hover:bg-ardoise-light transition-colors">
@@ -614,7 +616,7 @@
           <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="flex items-center gap-3 mb-3">
-              <div class="avatar-ring w-9! h-9! text-sm! mt-0! shrink-0">
+              <div class="avatar-ring w-9 h-9 text-sm mt-0 shrink-0">
                 @if($user->avatar)
                   <img src="{{ asset('storage/'.$user->avatar) }}" alt="">
                 @else

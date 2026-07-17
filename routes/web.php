@@ -24,7 +24,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profil/editer/{handle?}', [AuthController::class, 'updateProfil'])->name('profil.update');
     Route::patch('/profil/couverture/{handle?}', [AuthController::class, 'updateCover'])->name('profil.cover.update');
     Route::patch('/profil/avatar/{handle?}', [AuthController::class, 'updateAvatar'])->name('profil.avatar.update');
-    Route::get('/profil/connexions/{handle?}', fn() => redirect()->route('profil.show'))->name('profil.connexions');
+    Route::get('/profil/connexions/{handle?}', fn($handle = null) => redirect()->route('profil.show', $handle))->name('profil.connexions');
     Route::post('/profil/{handle}/invitation', [SocialController::class, 'sendFriendRequest'])->name('friend.requests.send');
     Route::post('/friend-requests/{id}/accepter', [SocialController::class, 'acceptFriendRequest'])->name('friend.requests.accept');
     Route::post('/friend-requests/{id}/refuser', [SocialController::class, 'declineFriendRequest'])->name('friend.requests.decline');
