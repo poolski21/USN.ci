@@ -452,16 +452,41 @@
         localStorage.setItem(THEME_KEY, nextTheme);
       });
 
-      const mobileDetails = document.querySelector('details[aria-controls="mobile-menu"]');
-      if (mobileDetails) {
-        const summary = mobileDetails.querySelector('summary');
-        const updateSummaryState = () => {
-          const expanded = mobileDetails.hasAttribute('open');
-          summary?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-        };
-        mobileDetails.addEventListener('toggle', updateSummaryState);
-        updateSummaryState();
-      }
+      const mobileMenuOpen = document.getElementById('mobile-menu-open');
+      const mobileMenuClose = document.getElementById('mobile-menu-close');
+      const mobileMenuDrawer = document.getElementById('mobile-menu-drawer');
+      const mobileMenuBackdrop = document.getElementById('mobile-menu-backdrop');
+      const mobileMenuPanel = document.getElementById('mobile-menu-panel');
+
+      const openMobileMenu = () => {
+        if (!mobileMenuDrawer || !mobileMenuPanel) return;
+        mobileMenuDrawer.classList.remove('hidden');
+        mobileMenuPanel.classList.remove('translate-x-full');
+        mobileMenuPanel.classList.add('translate-x-0');
+        mobileMenuOpen?.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+      };
+
+      const closeMobileMenu = () => {
+        if (!mobileMenuDrawer || !mobileMenuPanel) return;
+        mobileMenuPanel.classList.remove('translate-x-0');
+        mobileMenuPanel.classList.add('translate-x-full');
+        mobileMenuOpen?.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+        setTimeout(() => {
+          mobileMenuDrawer?.classList.add('hidden');
+        }, 300);
+      };
+
+      mobileMenuOpen?.addEventListener('click', openMobileMenu);
+      mobileMenuClose?.addEventListener('click', closeMobileMenu);
+      mobileMenuBackdrop?.addEventListener('click', closeMobileMenu);
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+          closeMobileMenu();
+        }
+      });
     });
   </script>
 </body>

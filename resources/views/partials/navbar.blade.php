@@ -58,15 +58,23 @@
         @endguest
       </nav>
 
-      <details class="relative md:hidden">
-        <summary class="list-none inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-ardoise/10 bg-white text-ardoise shadow-sm transition-colors hover:border-ardoise/40 hover:bg-ardoise/5" aria-haspopup="true" aria-controls="mobile-menu" aria-expanded="false">
-          <i class="ti ti-menu-2" aria-hidden="true"></i>
-        </summary>
-        <div id="mobile-menu" class="mt-2 w-full max-w-xs sm:max-w-sm rounded-3xl border border-ardoise/10 bg-white p-4 shadow-lg animate-fade-in dark:bg-slate-950/95 dark:border-slate-700">
+      <button id="mobile-menu-open" type="button" class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-ardoise/10 bg-white text-ardoise shadow-sm transition-colors hover:border-ardoise/40 hover:bg-ardoise/5 md:hidden" aria-label="Ouvrir le menu mobile" aria-controls="mobile-menu-drawer" aria-expanded="false">
+        <i class="ti ti-menu-2" aria-hidden="true"></i>
+      </button>
+
+      <div id="mobile-menu-drawer" class="fixed inset-0 z-50 hidden md:hidden">
+        <div id="mobile-menu-backdrop" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm transition-opacity duration-300"></div>
+        <aside id="mobile-menu-panel" class="fixed top-16 right-0 h-[calc(100vh-4rem)] w-full max-w-xs bg-white shadow-2xl border-l border-ardoise/10 p-4 transition-transform duration-300 ease-in-out transform translate-x-full dark:bg-slate-950 dark:border-slate-700 sm:max-w-sm">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-sm font-semibold text-ardoise">Menu</span>
+            <button id="mobile-menu-close" type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-ardoise/10 bg-white text-ardoise transition-colors hover:border-ardoise/40 hover:bg-ardoise/5" aria-label="Fermer le menu mobile">
+              <i class="ti ti-x" aria-hidden="true"></i>
+            </button>
+          </div>
           <form action="{{ route('search') }}" method="GET" class="mb-4 flex items-center gap-2">
             <label for="mobile-search" class="sr-only">Chercher un ami</label>
-            <input id="mobile-search" name="q" type="search" placeholder="Chercher un ami..." value="{{ request('q') }}" class="input-base bg-kraft-light text-ardoise dark:bg-slate-800 dark:text-gray-100" />
-            <button type="submit" class="inline-flex items-center justify-center btn-primary bg-moutarde text-ardoise hover:bg-moutarde/90">
+            <input id="mobile-search" name="q" type="search" placeholder="Chercher un ami..." value="{{ request('q') }}" class="input-base bg-kraft-light text-ardoise dark:bg-slate-800 dark:text-gray-100 w-full" />
+            <button type="submit" class="inline-flex items-center justify-center rounded-full bg-moutarde px-3 py-2 text-ardoise hover:bg-moutarde/90 transition-colors" aria-label="Recherche">
               <i class="ti ti-search"></i>
             </button>
           </form>
@@ -100,8 +108,8 @@
               </form>
             @endguest
           </nav>
-        </div>
-      </details>
+        </aside>
+      </div>
     </div>
   </div>
 </header>
