@@ -10,13 +10,15 @@ RUN npm run build
 FROM php:8.3-apache
 
 # Dépendances système + extensions PHP nécessaires à Laravel
+# Ajout de libpq-dev + pdo_pgsql pour PostgreSQL (Render)
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
     libzip-dev \
     libpng-dev \
     libonig-dev \
-    && docker-php-ext-install pdo pdo_mysql mysqli zip gd mbstring
+    libpq-dev \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mysqli zip gd mbstring
 
 # Installe Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -42,6 +44,15 @@ RUN composer install --optimize-autoloader --no-dev
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-EXPOSE 80
+# Render fournit la variable PORT (10000 par défaut) — Apache doit écouter dessus.
+# Ce script remplace dynamiquement le port au démarrage du conteneur.
+RUN echo '#!/bin/bash\n\
+PORT="${PORT:-10000}"\n\
+sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf\n\
+sed -i "s/:80>/:${PORT}>/" /etc/apache2/sites-available/000-default.conf\n\
+exec apache2-foreground' > /usr/local/bin/start-apache.sh \
+    && chmod +x /usr/local/bin/start-apache.sh
 
-CMD ["apache2-foreground"]
+EXPOSE 10000
+
+CMD ["/usr/local/bin/start-apache.sh"]
