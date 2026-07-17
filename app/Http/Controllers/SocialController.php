@@ -22,11 +22,22 @@ use Illuminate\Support\Str;
 
 class SocialController extends Controller
 {
+    /**
+     * Trouve un utilisateur par son handle, ou par son id si $value est numérique.
+     * Évite les erreurs PostgreSQL "invalid input syntax for type bigint"
+     * quand on compare un handle non-numérique à la colonne id.
+     */
+    private function findUserByHandle(string $value)
+    {
+        return User::where('handle', $value)
+            ->when(is_numeric($value), fn ($q) => $q->orWhere('id', $value))
+            ->firstOrFail();
+    }
+
     public function sendFriendRequest(Request $request, string $handle)
     {
         $sender = Auth::user();
-        $receiver = User::where('handle', $handle)->orWhere('id', $handle)->firstOrFail();
-
+        $receiver = $this->findUserByHandle($handle);
         if ($sender->id === $receiver->id) {
             return $this->friendRequestResponse($request, 'error', 'Impossible de vous ajouter vous-même.');
         }
@@ -180,7 +191,7 @@ class SocialController extends Controller
     public function conversation(string $handle)
     {
         $user = Auth::user();
-        $selected = User::where('handle', $handle)->orWhere('id', $handle)->firstOrFail();
+        $selected = $this->findUserByHandle($handle);
 
         // Mark incoming messages from the selected user as read for the current user
         SocialMessage::where('sender_id', $selected->id)
@@ -216,7 +227,7 @@ class SocialController extends Controller
     public function markMessagesRead(Request $request, string $handle)
     {
         $user = Auth::user();
-        $other = User::where('handle', $handle)->orWhere('id', $handle)->firstOrFail();
+        $other = $this->findUserByHandle($handle);
 
         SocialMessage::where('sender_id', $other->id)
             ->where('receiver_id', $user->id)
@@ -240,7 +251,7 @@ class SocialController extends Controller
         }
 
         $sender = Auth::user();
-        $receiver = User::where('handle', $handle)->orWhere('id', $handle)->firstOrFail();
+        $receiver = $this->findUserByHandle($handle);
 
         if ($sender->id !== $receiver->id) {
             $isFriend = FriendRequest::where(function ($query) use ($sender, $receiver) {
