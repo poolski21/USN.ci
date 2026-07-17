@@ -72,7 +72,14 @@
             <button type="submit" class="rounded-full bg-[#1F2E26] px-4 py-2 text-sm font-semibold text-[#F7F1E3]">Commenter</button>
           </form>
 
-          <div class="mt-5 space-y-3 event-comments-list">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-base font-semibold text-[#1F2E26]">Commentaires</h3>
+            <button type="button" class="comment-toggle inline-flex items-center gap-2 rounded-full border border-[#D4CABC] bg-white px-3 py-2 text-sm text-[#5E6E26] transition hover:bg-[#F1EFEA]" aria-expanded="true" aria-controls="event-comments-list">
+              <span>Plier</span>
+              <i class="ti ti-chevron-up"></i>
+            </button>
+          </div>
+          <div id="event-comments-list" class="mt-5 space-y-3 event-comments-list">
             @forelse($evenement->comments as $comment)
               <div class="rounded-2xl bg-white p-3 text-sm">
                 <div class="flex items-center justify-between gap-2">
@@ -106,7 +113,11 @@
         const response = await fetch(form.action, {
           method: 'POST',
           body: formData,
-          headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': window.USN.csrfToken,
+            'Accept': 'application/json'
+          }
         });
 
         if (response.ok) {
@@ -137,7 +148,11 @@
         const response = await fetch(form.action, {
           method: 'POST',
           body: formData,
-          headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': window.USN.csrfToken,
+            'Accept': 'application/json'
+          }
         });
 
         if (response.ok) {
@@ -158,7 +173,11 @@
         const response = await fetch(form.action, {
           method: 'POST',
           body: formData,
-          headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': window.USN.csrfToken,
+            'Accept': 'application/json'
+          }
         });
 
         if (response.ok) {
@@ -180,6 +199,23 @@
         }
       });
     });
-  });
-</script>
-@endpush
+
+        document.querySelectorAll('.comment-toggle').forEach(function (button) {
+          button.addEventListener('click', function () {
+            const targetId = button.getAttribute('aria-controls');
+            const list = targetId ? document.getElementById(targetId) : null;
+            if (!list) return;
+            const expanded = button.getAttribute('aria-expanded') === 'true';
+            list.classList.toggle('hidden', expanded);
+            button.setAttribute('aria-expanded', String(!expanded));
+            const icon = button.querySelector('i');
+            const label = button.querySelector('span');
+            if (expanded) {
+              if (label) label.textContent = 'Déplier';
+              if (icon) icon.className = 'ti ti-chevron-down';
+            } else {
+              if (label) label.textContent = 'Plier';
+              if (icon) icon.className = 'ti ti-chevron-up';
+            }
+          });
+        });

@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SendMessageRequest;
+use App\Http\Requests\SendGroupMessageRequest;
+use App\Http\Requests\StorePostRequest;
+use App\Http\Requests\StoreGroupRequest;
+use App\Http\Requests\UpdatePostRequest;
 use App\Models\FriendRequest;
 use App\Models\Group;
 use App\Models\Post;
@@ -11,6 +16,7 @@ use App\Models\SocialMessage;
 use App\Models\SocialNotification;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
@@ -69,6 +75,8 @@ class SocialController extends Controller
             ],
         ]);
 
+        ActivityLogger::log($sender, 'friend_request.sent', 'Demande d’ami envoyée', ['receiver_id' => $receiver->id, 'request_id' => $friendRequest->id]);
+
         return $this->friendRequestResponse($request, 'pending', 'Demande d\'ami envoyée.');
     }
 
@@ -96,6 +104,8 @@ class SocialController extends Controller
             ],
         ]);
 
+        ActivityLogger::log(Auth::user(), 'friend_request.accepted', 'Demande d’ami acceptée', ['request_id' => $friendRequest->id, 'sender_id' => $friendRequest->sender_id]);
+
         return $this->friendRequestResponse($httpRequest, 'accepted', 'Invitation acceptée.');
     }
 
@@ -112,6 +122,7 @@ class SocialController extends Controller
         }
 
         $friendRequest->update(['status' => 'declined']);
+        ActivityLogger::log(Auth::user(), 'friend_request.declined', 'Demande d’ami refusée', ['request_id' => $friendRequest->id, 'sender_id' => $friendRequest->sender_id]);
 
         return $this->friendRequestResponse($httpRequest, 'declined', 'Invitation refusée.');
     }
@@ -220,15 +231,12 @@ class SocialController extends Controller
         return back();
     }
 
-    public function sendMessage(Request $request, string $handle)
+    public function sendMessage(SendMessageRequest $request, string $handle)
     {
-        $request->validate([
-            'body' => 'nullable|string|max:2000',
-            'attachment' => 'nullable|file|max:10240',
-        ]);
+        $data = $request->validated();
 
-        if (! $request->filled('body') && ! $request->hasFile('attachment')) {
-            return back()->with('status', 'Vous devez écrire un message ou joindre un fichier.');
+        if (empty(trim($data['body'] ?? '')) && ! $request->hasFile('attachment')) {
+            return back()->withErrors(['body' => 'Vous devez écrire un message ou joindre un fichier.'])->withInput();
         }
 
         $sender = Auth::user();
@@ -265,6 +273,7 @@ class SocialController extends Controller
             'attachment_type' => $attachmentType,
             'attachment_name' => $attachmentName,
         ]);
+        ActivityLogger::log($sender, 'message.sent', 'Message envoyé', ['receiver_id' => $receiver->id, 'message_id' => $message->id]);
 
         SocialNotification::create([
             'user_id' => $receiver->id,
@@ -292,20 +301,15 @@ class SocialController extends Controller
         return redirect()->route('messages.conversation', ['handle' => $receiver->handle ?? $receiver->id])->with('status', 'Message envoyé.');
     }
 
-    public function storePost(Request $request)
+    public function storePost(StorePostRequest $request)
     {
-        $request->validate([
-            'contenu' => 'nullable|string|max:2000',
-            'media' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,mp4,mov,webm,pdf,doc,docx',
-            'visibilite' => 'nullable|in:public,amis,prive',
-            'group_id' => 'nullable|integer|exists:groups,id',
-        ]);
+        $data = $request->validated();
 
         $post = new Post();
         $post->user_id = Auth::id();
-        $post->contenu = $request->input('contenu');
-        $post->visibilite = $request->input('visibilite', 'public');
-        $post->group_id = $request->input('group_id');
+        $post->contenu = $data['contenu'] ?? null;
+        $post->visibilite = $data['visibilite'] ?? 'public';
+        $post->group_id = $data['group_id'] ?? null;
 
         if ($request->hasFile('media')) {
             $file = $request->file('media');
@@ -315,6 +319,7 @@ class SocialController extends Controller
         }
 
         $post->save();
+        ActivityLogger::log(Auth::user(), 'post.created', 'Publication créée', ['post_id' => $post->id, 'group_id' => $post->group_id]);
 
         // Si c'est un post de groupe, ne pas créer de notifications aux amis
         if (!$post->group_id) {
@@ -337,20 +342,12 @@ class SocialController extends Controller
         return back()->with('status', 'Publication créée.');
     }
 
-    public function editPost(Request $request, int $id)
+    public function editPost(UpdatePostRequest $request, int $id)
     {
         $post = Post::findOrFail($id);
 
-        if ($post->user_id !== Auth::id()) {
-            return back()->with('status', 'Vous ne pouvez modifier que vos propres publications.');
-        }
-
-        $request->validate([
-            'contenu' => 'nullable|string|max:2000',
-            'media' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,mp4,mov,webm,pdf,doc,docx',
-        ]);
-
-        $post->contenu = $request->input('contenu', $post->contenu);
+        $validated = $request->validated();
+        $post->contenu = $validated['contenu'] ?? $post->contenu;
 
         if ($request->hasFile('media')) {
             $file = $request->file('media');
@@ -382,32 +379,21 @@ class SocialController extends Controller
         return view('groupes.create');
     }
 
-    public function storeGroup(Request $request)
+    public function storeGroup(StoreGroupRequest $request)
     {
-        $request->validate([
-            'nom' => 'required|string|max:150',
-            'description' => 'nullable|string|max:1000',
-            'visibilite' => 'required|in:public,prive',
-            'max_members' => 'nullable|integer|min:2|max:500',
-        ], [
-            'nom.required' => 'Le nom du groupe est obligatoire.',
-            'visibilite.required' => 'La visibilité du groupe est obligatoire.',
-            'visibilite.in' => 'La visibilité doit être publique ou privée.',
-            'max_members.integer' => 'Le nombre maximum de membres doit être un nombre.',
-            'max_members.min' => 'Le groupe doit accepter au moins 2 membres.',
-            'max_members.max' => 'Le groupe ne peut pas dépasser 500 membres.',
-        ]);
+        $data = $request->validated();
 
         $group = Group::create([
-            'nom' => $request->input('nom'),
-            'slug' => Str::slug($request->input('nom')) . '-' . uniqid(),
+            'nom' => $data['nom'],
+            'slug' => Str::slug($data['nom']) . '-' . uniqid(),
             'admin_id' => Auth::id(),
-            'description' => $request->input('description'),
-            'visibilite' => $request->input('visibilite', 'public'),
-            'max_members' => $request->input('max_members'),
+            'description' => $data['description'] ?? null,
+            'visibilite' => $data['visibilite'],
+            'max_members' => $data['max_members'] ?? null,
         ]);
 
         $group->membres()->attach(Auth::id());
+        ActivityLogger::log(Auth::user(), 'group.created', 'Groupe créé', ['group_id' => $group->id]);
 
         return redirect()->route('groupes.show', $group->slug)->with('status', 'Le groupe a été créé avec succès.');
     }
@@ -506,7 +492,7 @@ class SocialController extends Controller
 
         return back()->with('status', 'Membre retiré du groupe.');
     }
-    public function sendGroupMessage(Request $request, string $slug)
+    public function sendGroupMessage(SendGroupMessageRequest $request, string $slug)
     {
         $group = Group::where('slug', $slug)->firstOrFail();
 
@@ -514,15 +500,12 @@ class SocialController extends Controller
             return back()->with('status', 'Vous devez être membre du groupe pour envoyer des messages.');
         }
 
-        $request->validate([
-            'contenu' => 'required|string|max:2000',
-            'fichier' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,pdf,doc,docx,txt,zip',
-        ]);
+        $data = $request->validated();
 
         $message = new \App\Models\GroupMessage();
         $message->group_id = $group->id;
         $message->user_id = Auth::id();
-        $message->contenu = $request->input('contenu');
+        $message->contenu = $data['contenu'];
 
         if ($request->hasFile('fichier')) {
             $file = $request->file('fichier');
@@ -625,6 +608,7 @@ class SocialController extends Controller
         ]);
 
         $post->increment('comments_count');
+        ActivityLogger::log(Auth::user(), 'post.comment', 'Commentaire ajouté', ['post_id' => $post->id, 'comment_id' => $comment->id]);
 
         if ($post->user_id !== Auth::id()) {
             SocialNotification::create([
@@ -658,6 +642,7 @@ class SocialController extends Controller
     {
         $post = Post::findOrFail($id);
         $post->increment('shares_count');
+        ActivityLogger::log(Auth::user(), 'post.share', 'Publication partagée', ['post_id' => $post->id]);
 
         if ($post->user_id !== Auth::id()) {
             SocialNotification::create([
@@ -683,6 +668,32 @@ class SocialController extends Controller
         }
 
         return back()->with('status', 'Publication partagée.');
+    }
+
+    public function liveUpdates(Request $request)
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return response()->json(['success' => false], 401);
+        }
+
+        $unreadMessages = SocialMessage::where('receiver_id', $user->id)
+            ->whereNull('read_at')
+            ->count();
+        $unreadNotifications = SocialNotification::where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->count();
+        $pendingFriendRequests = FriendRequest::where('status', 'pending')
+            ->where('receiver_id', $user->id)
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'unreadMessages' => $unreadMessages,
+            'unreadNotifications' => $unreadNotifications,
+            'pendingFriendRequests' => $pendingFriendRequests,
+        ]);
     }
 
     public function notifications()

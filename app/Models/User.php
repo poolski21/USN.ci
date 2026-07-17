@@ -8,6 +8,7 @@ use App\Models\Group;
 use App\Models\Post;
 use App\Models\SocialMessage;
 use App\Models\SocialNotification;
+use App\Models\UserActivity;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'prenom', 'nom', 'matricule', 'handle', 'email', 'password', 'universite', 'filiere', 'niveau', 'avatar', 'cover_photo', 'bio', 'cv_url', 'cv_path', 'github', 'private_documents', 'private_friends', 'private_projects', 'last_seen'])]
+#[Fillable(['name', 'prenom', 'nom', 'matricule', 'handle', 'email', 'password', 'role', 'universite', 'filiere', 'niveau', 'avatar', 'cover_photo', 'bio', 'cv_url', 'cv_path', 'github', 'private_documents', 'private_friends', 'private_projects', 'last_seen'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -73,6 +74,11 @@ class User extends Authenticatable
     public function posts()
     {
         return $this->hasMany(Post::class, 'user_id');
+    }
+
+    public function activities()
+    {
+        return $this->hasMany(UserActivity::class, 'user_id');
     }
 
     /**

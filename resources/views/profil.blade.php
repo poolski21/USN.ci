@@ -14,6 +14,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
+    darkMode: 'class',
     theme: {
       extend: {
         colors: {
@@ -38,6 +39,25 @@
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body { background-color: #E8E0CE; color: #221E18; }
+  html.dark body { background-color: #0F172A; color: #E2E8F0; }
+  html.dark .bg-white { background-color: #111827 !important; }
+  html.dark .bg-white\/90 { background-color: rgba(17, 24, 39, .9) !important; }
+  html.dark .bg-white\/70 { background-color: rgba(17, 24, 39, .7) !important; }
+  html.dark .bg-kraft-light { background-color: #111827 !important; }
+  html.dark .bg-kraft-light\/80 { background-color: rgba(17, 24, 39, .8) !important; }
+  html.dark .bg-ardoise\/10 { background-color: rgba(17, 24, 39, .14) !important; }
+  html.dark .text-ardoise { color: #E2E8F0 !important; }
+  html.dark .text-tinta { color: #CBD5E1 !important; }
+  html.dark .text-gray-700 { color: #CBD5E1 !important; }
+  html.dark .text-gray-600 { color: #CBD5E1 !important; }
+  html.dark .text-gray-500 { color: #94A3B8 !important; }
+  html.dark .text-gray-400 { color: #94A3B8 !important; }
+  html.dark .text-gray-300 { color: #E2E8F0 !important; }
+  html.dark .border-ardoise\/20 { border-color: rgba(148,163,184,.2) !important; }
+  html.dark .bg-kraft-light { background-color: #111827 !important; }
+  html.dark .bg-kraft { background-color: #1E293B !important; }
+  html.dark .border-kraft-dark\/40 { border-color: rgba(148,163,184,.4) !important; }
+  html.dark .rounded-b-xl { background-color: #111827 !important; }
 
   /* ─── COVER ─── */
   .cover-zone {
@@ -180,6 +200,9 @@
 </head>
 
 <body class="font-display antialiased">
+  <button id="theme-toggle-floating" type="button" aria-label="Basculer le thème" class="fixed z-50 grid place-items-center rounded-full border border-ardoise/10 bg-white p-3 text-ardoise shadow-lg transition-colors duration-150 hover:border-ardoise/40 hover:text-ardoise-dark focus:outline-none focus:ring-2 focus:ring-moutarde/40" style="top:1rem; right:1rem; width:44px; height:44px; touch-action:none; cursor:grab;">
+    <i id="theme-toggle-icon" class="ti ti-moon"></i>
+  </button>
 
 {{-- ═══════════════════════════════════════════════
      NAVBAR (intègre ta navbar existante ici)
@@ -718,6 +741,10 @@
             @else
             <span class="post-comment-count hidden">0 commentaire</span>
             @endif
+            <button type="button" class="comment-toggle inline-flex items-center gap-2 rounded-full border border-kraft-dark/20 bg-white px-3 py-2 text-xs text-[#5E6E26] transition hover:bg-kraft-light/80" aria-expanded="true" aria-controls="post-{{ $post->id }}-comments">
+              <span>Plier</span>
+              <i class="ti ti-chevron-up"></i>
+            </button>
             @if($post->shares_count > 0)
             <span class="post-share-count">{{ $post->shares_count }} partage{{ $post->shares_count > 1 ? 's' : '' }}</span>
             @else
@@ -744,7 +771,7 @@
           </div>
 
           <div class="px-4 pb-4 pt-3 space-y-2">
-            <div id="post-{{ $post->id }}-comments">
+            <div id="post-{{ $post->id }}-comments" class="post-comments-list">
             @if($post->comments->isNotEmpty())
               @foreach($post->comments->sortByDesc('created_at') as $comment)
               <div class="rounded-xl bg-gray-50 p-3 text-sm">
@@ -1117,7 +1144,10 @@
       const response = await fetch(form.action, {
         method: 'POST',
         body: formData,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': window.USN.csrfToken,
+        }
       });
 
       if (response.ok) {
@@ -1191,7 +1221,10 @@
       const response = await fetch(form.action, {
         method: 'POST',
         body: new FormData(form),
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': window.USN.csrfToken,
+        }
       });
       if (response.ok) {
         const article = form.closest('article.post-card');
@@ -1214,7 +1247,10 @@
       const response = await fetch(form.action, {
         method: 'POST',
         body: new FormData(form),
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': window.USN.csrfToken,
+        }
       });
       if (response.ok) {
         form.closest('article.post-card')?.remove();
@@ -1288,7 +1324,10 @@
       const response = await fetch(form.action, {
         method: 'POST',
         body: formData,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': window.USN.csrfToken,
+        }
       });
 
       if (button) {
@@ -1328,6 +1367,26 @@
     });
   });
 
+  document.querySelectorAll('.comment-toggle').forEach(button => {
+    button.addEventListener('click', () => {
+      const targetId = button.getAttribute('aria-controls');
+      const list = targetId ? document.getElementById(targetId) : null;
+      if (!list) return;
+      const expanded = button.getAttribute('aria-expanded') === 'true';
+      list.classList.toggle('hidden', expanded);
+      button.setAttribute('aria-expanded', String(!expanded));
+      const icon = button.querySelector('i');
+      const label = button.querySelector('span');
+      if (expanded) {
+        if (label) label.textContent = 'Déplier';
+        if (icon) icon.className = 'ti ti-chevron-down';
+      } else {
+        if (label) label.textContent = 'Plier';
+        if (icon) icon.className = 'ti ti-chevron-up';
+      }
+    });
+  });
+
   /* ── Animer les barres de compétences au chargement ── */
   document.querySelectorAll('.skill-bar-fill, .bar-fill').forEach(bar => {
     const targetW = bar.style.width;
@@ -1343,6 +1402,129 @@
     document.querySelectorAll('article.post-card').forEach(el => obs.observe(el));
     
   }
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const themeButton = document.getElementById('theme-toggle-floating');
+    const themeIcon = document.getElementById('theme-toggle-icon');
+    const THEME_KEY = 'theme';
+    const POSITION_KEY = 'themeToggleFloatingPosition';
+    let dragging = false;
+    let dragMoved = false;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+
+    if (!themeButton || !themeIcon) {
+      return;
+    }
+
+    const setIcon = (dark) => {
+      themeIcon.className = dark ? 'ti ti-sun' : 'ti ti-moon';
+    };
+
+    const applyTheme = (theme) => {
+      const dark = theme === 'dark';
+      document.documentElement.classList.toggle('dark', dark);
+      setIcon(dark);
+    };
+
+    const clamp = (left, top) => {
+      const maxLeft = window.innerWidth - themeButton.offsetWidth - 8;
+      const maxTop = window.innerHeight - themeButton.offsetHeight - 8;
+      return {
+        left: Math.min(Math.max(left, 8), maxLeft),
+        top: Math.min(Math.max(top, 8), maxTop),
+      };
+    };
+
+    const savePosition = () => {
+      const left = parseInt(themeButton.style.left, 10);
+      const top = parseInt(themeButton.style.top, 10);
+      if (!Number.isNaN(left) && !Number.isNaN(top)) {
+        localStorage.setItem(POSITION_KEY, JSON.stringify({ left, top }));
+      }
+    };
+
+    const restorePosition = () => {
+      const stored = localStorage.getItem(POSITION_KEY);
+      if (!stored) {
+        return;
+      }
+      try {
+        const position = JSON.parse(stored);
+        if (typeof position.left === 'number' && typeof position.top === 'number') {
+          const clamped = clamp(position.left, position.top);
+          themeButton.style.left = clamped.left + 'px';
+          themeButton.style.top = clamped.top + 'px';
+          themeButton.style.right = 'auto';
+        }
+      } catch (err) {
+        console.error('Unable to restore theme icon position', err);
+      }
+    };
+
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    if (storedTheme) {
+      applyTheme(storedTheme);
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      applyTheme('dark');
+    } else {
+      applyTheme('light');
+    }
+
+    restorePosition();
+
+    themeButton.addEventListener('pointerdown', (event) => {
+      dragging = true;
+      dragMoved = false;
+      startX = event.clientX;
+      startY = event.clientY;
+      const rect = themeButton.getBoundingClientRect();
+      startLeft = rect.left;
+      startTop = rect.top;
+      themeButton.setPointerCapture(event.pointerId);
+      themeButton.style.cursor = 'grabbing';
+      event.preventDefault();
+    });
+
+    themeButton.addEventListener('pointermove', (event) => {
+      if (!dragging) return;
+      const dx = event.clientX - startX;
+      const dy = event.clientY - startY;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+        dragMoved = true;
+      }
+      const pos = clamp(startLeft + dx, startTop + dy);
+      themeButton.style.left = pos.left + 'px';
+      themeButton.style.top = pos.top + 'px';
+      themeButton.style.right = 'auto';
+    });
+
+    const endDrag = (event) => {
+      if (!dragging) return;
+      dragging = false;
+      themeButton.releasePointerCapture(event.pointerId);
+      themeButton.style.cursor = 'grab';
+      if (dragMoved) {
+        savePosition();
+      }
+    };
+
+    themeButton.addEventListener('pointerup', endDrag);
+    themeButton.addEventListener('pointercancel', endDrag);
+
+    themeButton.addEventListener('click', () => {
+      if (dragMoved) {
+        dragMoved = false;
+        return;
+      }
+      const nextTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+      applyTheme(nextTheme);
+      localStorage.setItem(THEME_KEY, nextTheme);
+    });
+  });
 </script>
 
 </body>

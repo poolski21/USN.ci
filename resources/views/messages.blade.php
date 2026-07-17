@@ -5,19 +5,20 @@
 
 @section('content')
   <div class="grid gap-6 lg:grid-cols-[320px_1fr] mt-6">
-    <aside class="flex flex-col rounded-3xl bg-white/95 border border-ardoise/20 shadow-sm overflow-hidden">
-      <div class="px-6 py-5 border-b border-ardoise/10 bg-white">
-        <h1 class="text-xl font-semibold text-ardoise">Messages</h1>
+    <aside class="flex flex-col rounded-3xl bg-white/95 border border-ardoise/20 shadow-sm overflow-hidden dark:bg-slate-950/90 dark:border-slate-700">
+      <div class="px-6 py-5 border-b border-ardoise/10 bg-white dark:bg-slate-950/90 dark:border-slate-700">
+        <h1 class="text-xl font-semibold text-ardoise dark:text-gray-100">Messages</h1>
         <div class="mt-4 relative">
-          <i class="ti ti-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          <input id="message-search" type="search" placeholder="Rechercher une conversation" class="w-full rounded-full border border-ardoise/10 bg-[#F8F2E6] pl-11 pr-4 py-3 text-sm text-ardoise focus:outline-none focus:ring-2 focus:ring-moutarde/40" />
+          <i class="ti ti-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true"></i>
+          <input id="message-search" type="search" placeholder="Rechercher une conversation" aria-label="Rechercher une conversation" class="w-full rounded-full border border-ardoise/10 bg-[#F8F2E6] dark:bg-slate-800 dark:border-slate-700 pl-11 pr-4 py-3 text-sm text-ardoise dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-moutarde/40 dark:focus:ring-moutarde/40 dark:placeholder:text-gray-400" />
         </div>
       </div>
-      <div class="overflow-y-auto p-4 space-y-3" style="max-height: calc(100vh - 220px);">
+      <div class="overflow-y-auto p-4 space-y-3" role="list" style="max-height: calc(100vh - 220px);">
         @forelse($threads as $thread)
           <a href="{{ route('messages.conversation', $thread['friend']->handle ?? $thread['friend']->id) }}"
+             role="listitem"
              data-search="{{ strtolower($thread['friend']->prenom . ' ' . $thread['friend']->nom . ' ' . ($thread['last']->body ?? '')) }}"
-             class="thread-item flex gap-3 items-center rounded-3xl p-3 transition-colors {{ optional($selected)->id === $thread['friend']->id ? 'bg-kraft-light border border-ardoise/20 shadow-sm' : 'hover:bg-kraft-light hover:border hover:border-ardoise/10' }}">
+             class="thread-item flex gap-3 items-center rounded-3xl p-3 transition-colors {{ optional($selected)->id === $thread['friend']->id ? 'bg-kraft-light border border-ardoise/20 shadow-sm dark:bg-slate-900/80 dark:border-slate-700' : 'hover:bg-kraft-light hover:border hover:border-ardoise/10 dark:hover:bg-slate-900/80' }}" aria-label="Conversation avec {{ $thread['friend']->prenom }} {{ $thread['friend']->nom }}">
             <div class="flex-shrink-0 h-14 w-14 rounded-full bg-sauge/10 text-sauge grid place-items-center text-lg font-semibold text-ardoise">
               @if($thread['friend']->avatar)
                 <img src="{{ asset('storage/'.$thread['friend']->avatar) }}" alt="{{ $thread['friend']->prenom }}" class="h-full w-full rounded-full object-cover" />
@@ -46,8 +47,8 @@
       </div>
     </aside>
 
-    <section class="flex flex-col rounded-3xl bg-white/95 border border-ardoise/20 shadow-sm overflow-hidden">
-      <div class="px-6 py-5 border-b border-ardoise/10 bg-white">
+    <section class="flex flex-col rounded-3xl bg-white/95 border border-ardoise/20 shadow-sm overflow-hidden dark:bg-slate-950/90 dark:border-slate-700">
+      <div class="px-6 py-5 border-b border-ardoise/10 bg-white dark:bg-slate-950/90 dark:border-slate-700">
         <div class="flex items-center justify-between gap-4">
           <div class="flex items-center gap-3">
             @if($selected)
@@ -78,15 +79,15 @@
       </div>
 
       @if($selected)
-        <div id="messages-container" class="flex-1 overflow-y-auto px-6 py-5 space-y-4 bg-[#F3F1EB]">
+        <div id="messages-container" class="flex-1 min-h-[40vh] overflow-y-auto px-6 py-5 space-y-4 bg-[#F3F1EB] dark:bg-slate-950/90">
           @forelse($messages as $message)
             <div class="flex {{ $message->sender_id === auth()->id() ? 'justify-end' : 'justify-start' }}">
-              <div class="max-w-[85%] rounded-[28px] p-4 shadow-sm {{ $message->sender_id === auth()->id() ? 'bg-[#F8F2E6] text-ardoise rounded-br-[6px]' : 'bg-white text-ardoise rounded-bl-[6px] border border-ardoise/10' }}">
+              <div class="max-w-[85%] rounded-[28px] p-4 shadow-sm {{ $message->sender_id === auth()->id() ? 'bg-[#F8F2E6] text-ardoise rounded-br-[6px] dark:bg-slate-800 dark:text-gray-100' : 'bg-white text-ardoise rounded-bl-[6px] border border-ardoise/10 dark:bg-slate-900/90 dark:text-gray-100 dark:border-slate-700' }}">
                 @if($message->body)
                   <p class="text-sm leading-relaxed">{{ $message->body }}</p>
                 @endif
                 @if($message->attachment_path)
-                  <div class="mt-3 rounded-3xl border border-ardoise/20 bg-white p-3">
+                  <div class="mt-3 rounded-3xl border border-ardoise/20 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/90">
                     <p class="text-xs uppercase tracking-[.18em] text-gray-400 mb-2">Fichier joint</p>
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div class="space-y-1">
@@ -110,17 +111,17 @@
           @endforelse
         </div>
 
-        <form action="{{ route('messages.send', ['handle' => $selected->handle ?? $selected->id]) }}" method="POST" enctype="multipart/form-data" class="border-t border-ardoise/10 bg-white p-6" id="message-form">
+        <form action="{{ route('messages.send', ['handle' => $selected->handle ?? $selected->id]) }}" method="POST" enctype="multipart/form-data" class="border-t border-ardoise/10 bg-white p-6 dark:bg-slate-950/90 dark:border-slate-700" id="message-form">
           @csrf
-          <div class="flex items-center gap-3">
-            <label class="flex h-12 w-12 items-center justify-center rounded-full border border-ardoise/10 bg-kraft-light text-ardoise cursor-pointer transition-colors hover:bg-kraft/90">
-              <i class="ti ti-paperclip"></i>
-              <input type="file" name="attachment" id="message-attachment" class="hidden" accept="*/*">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label for="message-attachment" class="flex h-12 w-12 items-center justify-center rounded-full border border-ardoise/10 bg-kraft-light text-ardoise cursor-pointer transition-colors hover:bg-kraft/90" aria-label="Ajouter une pièce jointe">
+              <i class="ti ti-paperclip" aria-hidden="true"></i>
             </label>
-            <textarea name="body" id="message-body" rows="1" class="min-h-[48px] flex-1 resize-none rounded-full border border-ardoise/10 bg-[#F8F2E6] px-4 py-3 text-sm text-ardoise focus:outline-none focus:ring-2 focus:ring-moutarde/40" placeholder="Écris un message..."></textarea>
+            <input type="file" name="attachment" id="message-attachment" class="hidden" accept="*/*">
+            <textarea name="body" id="message-body" rows="1" class="min-h-[48px] flex-1 resize-none rounded-full border border-ardoise/10 bg-[#F8F2E6] dark:bg-slate-800 dark:border-slate-700 px-4 py-3 text-sm text-ardoise dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-moutarde/40 dark:focus:ring-moutarde/40 placeholder:text-gray-500 dark:placeholder:text-gray-400" placeholder="Écris un message..." aria-label="Écrire un message"></textarea>
             <button type="submit" id="message-send-button" class="inline-flex h-12 items-center justify-center rounded-full bg-ardoise px-6 text-sm font-semibold text-kraft hover:bg-ardoise-light transition-colors">Envoyer</button>
           </div>
-          <div id="message-status" class="text-sm text-ardoise hidden mt-2"></div>
+          <div id="message-status" class="text-sm text-ardoise hidden mt-2" role="status" aria-live="polite"></div>
         </form>
       @else
         <div class="flex-1 p-6 border-t border-ardoise/10 bg-[#F3F1EB]">

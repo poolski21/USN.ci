@@ -4,6 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <script>
+    window.USN = window.USN || {};
+    window.USN.csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+  </script>
   <title>@yield('title', 'USN')</title>
   <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
   <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
@@ -14,6 +19,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -31,11 +37,86 @@
         }
       }
     }
+
+    if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    }
   </script>
   <style>
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    body { background-color: #E8E0CE; color: #221E18; }
+    body { min-height: 100vh; background-color: #E8E0CE; color: #221E18; transition: background-color .2s ease, color .2s ease; }
+    html.dark body { background-color: #0F172A; color: #E2E8F0; }
+
+    .skip-link {
+      position: absolute;
+      left: -999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+
+    .skip-link:focus {
+      left: 1rem;
+      top: 1rem;
+      width: auto;
+      height: auto;
+      padding: .75rem 1rem;
+      z-index: 50;
+      background: #E2A33B;
+      color: #1F2E26;
+      border-radius: .75rem;
+      box-shadow: 0 10px 30px rgba(31,46,38,.18);
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible {
+      outline: 3px solid #E2A33B;
+      outline-offset: 3px;
+    }
+
+    img, svg { max-width: 100%; display: block; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+    .page-card { background: rgba(255,255,255,.96); border: 1px solid #D4CABC; border-radius: 1.75rem; box-shadow: 0 20px 60px rgba(31,46,38,.08); }
+    .page-card-dark { background: rgba(15,23,42,.9); border-color: rgba(148,163,184,.22); }
+    .section-heading { margin-bottom: 1.25rem; font-size: .875rem; font-weight: 700; color: #1F2E26; letter-spacing: .12em; text-transform: uppercase; }
+    .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; padding: .75rem 1.25rem; border-radius: 9999px; background: #E2A33B; color: #1F2E26; font-weight: 700; transition: background .15s ease, transform .15s ease; }
+    .btn-primary:hover { background: #C98826; }
+    .btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; padding: .75rem 1.25rem; border-radius: 9999px; border: 1px solid rgba(31,46,38,.16); background: #FFF; color: #1F2E26; transition: background .15s ease, color .15s ease; }
+    .btn-secondary:hover { background: #F8F2E6; }
+    .input-base { width: 100%; border-radius: 9999px; border: 1px solid #D4CABC; background: #F8F2E6; color: #1F2E26; padding: .75rem 1rem; transition: border-color .15s ease, box-shadow .15s ease; }
+    .input-base:focus { outline: none; border-color: #E2A33B; box-shadow: 0 0 0 3px rgba(226,163,59,.16); }
+    .text-muted { color: #6B7280; }
+    .badge-pill { display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: .25rem .75rem; font-size: .6875rem; font-weight: 700; background: #E2A33B; color: #1F2E26; }
+
+    html.dark .bg-white { background-color: #111827 !important; }
+    html.dark .bg-white\/90 { background-color: rgba(17, 24, 39, .9) !important; }
+    html.dark .bg-white\/70 { background-color: rgba(17, 24, 39, .7) !important; }
+    html.dark .bg-kraft-light { background-color: #111827 !important; }
+    html.dark .bg-kraft-light\/80 { background-color: rgba(17, 24, 39, .8) !important; }
+    html.dark .bg-ardoise\/10 { background-color: rgba(17, 24, 39, .14) !important; }
+    html.dark .text-ardoise { color: #E2E8F0 !important; }
+    html.dark .text-tinta { color: #CBD5E1 !important; }
+    html.dark .text-gray-700 { color: #CBD5E1 !important; }
+    html.dark .text-gray-600 { color: #CBD5E1 !important; }
+    html.dark .text-gray-500 { color: #94A3B8 !important; }
+    html.dark .text-gray-400 { color: #94A3B8 !important; }
+    html.dark .text-gray-300 { color: #E2E8F0 !important; }
+    html.dark .text-muted { color: #94A3B8 !important; }
+    html.dark .border-ardoise\/20 { border-color: rgba(148,163,184,.2) !important; }
+    html.dark .bg-kraft { background-color: #1E293B !important; }
+    html.dark .border-kraft-dark\/30 { border-color: rgba(148,163,184,.3) !important; }
+    html.dark .border-kraft-dark\/40 { border-color: rgba(148,163,184,.4) !important; }
+    html.dark .bg-moutarde { background-color: #E2A33B !important; color: #1F2937 !important; }
+    html.dark .btn-secondary { background: #111827; border-color: #374151; color: #E2E8F0; }
+    html.dark .btn-secondary:hover { background: #111827; }
+    html.dark .input-base { background: #111827; border-color: #374151; color: #E2E8F0; }
+    html.dark .input-base:focus { border-color: #E2A33B; box-shadow: 0 0 0 3px rgba(226,163,59,.16); }
+    html.dark .hover\:bg-kraft-light:hover { background-color: #111827 !important; }
+    html.dark .hover\:text-moutarde:hover { color: #E2A33B !important; }
     .cover-zone {
       height: 220px;
       background-color: #1F2E26;
@@ -153,11 +234,235 @@
   </style>
   @stack('head')
 </head>
-<body class="font-display antialiased">
+<body class="font-display antialiased" @auth data-authenticated="true" @endauth>
+  <a href="#main-content" class="skip-link">Aller au contenu</a>
   @include('partials.navbar')
-  <main class="max-w-5xl mx-auto px-4 sm:px-6 pb-10">
+  <button id="theme-toggle-floating" type="button" aria-label="Basculer le thème" aria-pressed="false" class="fixed z-50 grid place-items-center rounded-full border border-ardoise/10 bg-white p-3 text-ardoise shadow-lg transition-colors duration-150 hover:border-ardoise/40 hover:text-ardoise-dark focus:outline-none focus:ring-2 focus:ring-moutarde/40" style="top:1rem; right:1rem; width:44px; height:44px; touch-action:none; cursor:grab;">
+    <i id="theme-toggle-icon" class="ti ti-moon"></i>
+  </button>
+  <main id="main-content" class="max-w-5xl mx-auto px-4 sm:px-6 pb-10">
     @yield('content')
   </main>
   @stack('scripts')
+  @auth
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const body = document.body;
+        const isAuthenticated = body.getAttribute('data-authenticated') === 'true';
+
+        if (!isAuthenticated) {
+          return;
+        }
+
+        let previousState = null;
+
+        const updateBadges = async function () {
+          try {
+            const response = await fetch('{{ route('live.updates') }}', {
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+              },
+            });
+
+            if (!response.ok) {
+              return;
+            }
+
+            const data = await response.json();
+            const currentState = {
+              unreadMessages: Number(data.unreadMessages || 0),
+              unreadNotifications: Number(data.unreadNotifications || 0),
+              pendingFriendRequests: Number(data.pendingFriendRequests || 0),
+            };
+
+            document.querySelectorAll('.unread-messages-badge').forEach(function (badge) {
+              if (currentState.unreadMessages > 0) {
+                badge.textContent = currentState.unreadMessages;
+                badge.classList.remove('hidden');
+              } else {
+                badge.textContent = '0';
+                badge.classList.add('hidden');
+              }
+            });
+
+            document.querySelectorAll('.unread-notifications-badge').forEach(function (badge) {
+              if (currentState.unreadNotifications > 0) {
+                badge.textContent = currentState.unreadNotifications;
+                badge.classList.remove('hidden');
+              } else {
+                badge.textContent = '0';
+                badge.classList.add('hidden');
+              }
+            });
+
+            const shouldRefresh = previousState && (
+              currentState.unreadMessages !== previousState.unreadMessages ||
+              currentState.unreadNotifications !== previousState.unreadNotifications ||
+              currentState.pendingFriendRequests !== previousState.pendingFriendRequests
+            );
+
+            previousState = currentState;
+
+            if (shouldRefresh && ['\/messages', '\/notifications', '\/profil'].some((segment) => window.location.pathname.includes(segment))) {
+              window.location.reload();
+            }
+          } catch (error) {
+            console.error('Live updates error', error);
+          }
+        };
+
+        updateBadges();
+        updateThemeControls();
+        window.setInterval(updateBadges, 10000);
+      });
+    </script>
+  @endauth
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const themeToggleButton = document.getElementById('theme-toggle-floating');
+      const themeIcon = document.getElementById('theme-toggle-icon');
+      const THEME_KEY = 'theme';
+      const POSITION_KEY = 'themeToggleFloatingPosition';
+      let dragging = false;
+      let dragMoved = false;
+      let startX = 0;
+      let startY = 0;
+      let startLeft = 0;
+      let startTop = 0;
+
+      if (!themeToggleButton || !themeIcon) {
+        return;
+      }
+
+      const updateIcon = function (dark) {
+        themeIcon.className = dark ? 'ti ti-sun' : 'ti ti-moon';
+      };
+
+      const applyTheme = function (theme) {
+        const dark = theme === 'dark';
+        document.documentElement.classList.toggle('dark', dark);
+        updateIcon(dark);
+      };
+
+      const clampPosition = function (left, top) {
+        const maxLeft = window.innerWidth - themeToggleButton.offsetWidth - 8;
+        const maxTop = window.innerHeight - themeToggleButton.offsetHeight - 8;
+        return {
+          left: Math.min(Math.max(left, 8), maxLeft),
+          top: Math.min(Math.max(top, 8), maxTop),
+        };
+      };
+
+      const savePosition = function () {
+        const left = parseInt(themeToggleButton.style.left, 10);
+        const top = parseInt(themeToggleButton.style.top, 10);
+        if (!Number.isNaN(left) && !Number.isNaN(top)) {
+          localStorage.setItem(POSITION_KEY, JSON.stringify({ left, top }));
+        }
+      };
+
+      const restorePosition = function () {
+        const stored = localStorage.getItem(POSITION_KEY);
+        if (!stored) {
+          return;
+        }
+        try {
+          const position = JSON.parse(stored);
+          if (typeof position.left === 'number' && typeof position.top === 'number') {
+            const clamped = clampPosition(position.left, position.top);
+            themeToggleButton.style.left = clamped.left + 'px';
+            themeToggleButton.style.top = clamped.top + 'px';
+            themeToggleButton.style.right = 'auto';
+          }
+        } catch (err) {
+          console.error('theme button position parse error', err);
+        }
+      };
+
+      const storedTheme = localStorage.getItem(THEME_KEY);
+      if (storedTheme) {
+        applyTheme(storedTheme);
+      } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        applyTheme('dark');
+      } else {
+        applyTheme('light');
+      }
+
+      restorePosition();
+
+      themeToggleButton.style.cursor = 'grab';
+      themeToggleButton.addEventListener('pointerdown', function (event) {
+        dragging = true;
+        dragMoved = false;
+        startX = event.clientX;
+        startY = event.clientY;
+        const rect = themeToggleButton.getBoundingClientRect();
+        startLeft = rect.left;
+        startTop = rect.top;
+        themeToggleButton.setPointerCapture(event.pointerId);
+        themeToggleButton.style.cursor = 'grabbing';
+        event.preventDefault();
+      });
+
+      themeToggleButton.addEventListener('pointermove', function (event) {
+        if (!dragging) {
+          return;
+        }
+        const dx = event.clientX - startX;
+        const dy = event.clientY - startY;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+          dragMoved = true;
+        }
+        const newPos = clampPosition(startLeft + dx, startTop + dy);
+        themeToggleButton.style.left = newPos.left + 'px';
+        themeToggleButton.style.top = newPos.top + 'px';
+        themeToggleButton.style.right = 'auto';
+      });
+
+      themeToggleButton.addEventListener('pointerup', function (event) {
+        if (!dragging) {
+          return;
+        }
+        dragging = false;
+        themeToggleButton.releasePointerCapture(event.pointerId);
+        themeToggleButton.style.cursor = 'grab';
+        if (dragMoved) {
+          savePosition();
+        }
+      });
+
+      themeToggleButton.addEventListener('pointercancel', function (event) {
+        if (!dragging) {
+          return;
+        }
+        dragging = false;
+        themeToggleButton.releasePointerCapture(event.pointerId);
+        themeToggleButton.style.cursor = 'grab';
+        savePosition();
+      });
+
+      themeToggleButton.addEventListener('click', function () {
+        if (dragMoved) {
+          dragMoved = false;
+          return;
+        }
+        const nextTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+        applyTheme(nextTheme);
+        localStorage.setItem(THEME_KEY, nextTheme);
+      });
+
+      const mobileDetails = document.querySelector('details[aria-controls="mobile-menu"]');
+      if (mobileDetails) {
+        const summary = mobileDetails.querySelector('summary');
+        const updateSummaryState = () => {
+          const expanded = mobileDetails.hasAttribute('open');
+          summary?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        };
+        mobileDetails.addEventListener('toggle', updateSummaryState);
+        updateSummaryState();
+      }
+    });
+  </script>
 </body>
 </html>

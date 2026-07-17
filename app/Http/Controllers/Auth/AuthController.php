@@ -3,6 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Requests\UpdateCoverPhotoRequest;
+use App\Http\Requests\UpdateAvatarRequest;
 use Illuminate\Http\Request;
 use App\Models\FriendRequest;
 use App\Models\Group;
@@ -10,6 +15,7 @@ use App\Models\Post;
 use App\Models\SocialMessage;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -24,16 +30,14 @@ class AuthController extends Controller
     }
 
     // Handle connexion (login) POST
-    public function connexion(Request $request)
+    public function connexion(LoginRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string|min:6',
-        ]);
+        $credentials = $request->validated();
 
-        if (Auth::attempt(['email' => $request->email, 'password' => $request->password], $request->filled('remember'))) {
+        if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password']], $request->boolean('remember'))) {
             $request->session()->regenerate();
             Auth::user()->update(['last_seen' => Carbon::now()]);
+            ActivityLogger::log(Auth::user(), 'user.login', 'Connexion réussie', ['email' => $credentials['email']]);
             return redirect()->route('profil.show');
         }
 
@@ -47,40 +51,35 @@ class AuthController extends Controller
     }
 
     // Handle inscription (register) POST
-    public function inscription(Request $request)
+    public function inscription(RegisterRequest $request)
     {
-        $request->validate([
-            'prenom' => 'required|string|max:100',
-            'nom' => 'required|string|max:100',
-            'matricule' => 'required|string|max:50',
-            'universite' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
+        $validated = $request->validated();
 
-        $name = trim($request->input('prenom') . ' ' . $request->input('nom'));
+        $name = trim($validated['prenom'] . ' ' . $validated['nom']);
 
         $handle = Str::slug($request->input('prenom') . ' ' . $request->input('nom')); 
         $handle = substr($handle, 0, 40) . '-' . Str::lower($request->input('matricule'));
 
         $user = User::create([
             'name' => $name,
-            'prenom' => $request->input('prenom'),
-            'nom' => $request->input('nom'),
-            'matricule' => $request->input('matricule'),
-            'universite' => $request->input('universite'),
-            'email' => $request->input('email'),
-            'password' => Hash::make($request->input('password')),
+            'prenom' => $validated['prenom'],
+            'nom' => $validated['nom'],
+            'matricule' => $validated['matricule'],
+            'universite' => $validated['universite'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
             'handle' => $handle,
         ]);
 
         Auth::login($user);
+        ActivityLogger::log($user, 'user.register', 'Nouvel utilisateur inscrit', ['email' => $user->email]);
 
         return redirect()->route('profil.show')->with('status', 'Inscription réussie.');
     }
 
     public function logout(Request $request)
     {
+        ActivityLogger::log(Auth::user(), 'user.logout', 'Déconnexion utilisateur');
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -116,26 +115,16 @@ class AuthController extends Controller
     }
 
     // Update profile content
-    public function updateProfil(Request $request, $handle = null)
+    public function updateProfil(UpdateProfileRequest $request, $handle = null)
     {
-        $request->validate([
-            'bio' => 'nullable|string|max:2000',
-            'github' => 'nullable|url|max:255',
-            'cv_url' => 'nullable|url|max:255',
-            'filiere' => 'nullable|string|max:255',
-            'niveau' => 'nullable|string|max:255',
-            'cv' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
-            'private_documents' => 'sometimes|boolean',
-            'private_friends' => 'sometimes|boolean',
-            'private_projects' => 'sometimes|boolean',
-        ]);
+        $validated = $request->validated();
 
         $user = Auth::user();
-        $user->bio = $request->input('bio');
-        $user->github = $request->input('github');
-        $user->cv_url = $request->input('cv_url');
-        $user->filiere = $request->input('filiere');
-        $user->niveau = $request->input('niveau');
+        $user->bio = $validated['bio'] ?? null;
+        $user->github = $validated['github'] ?? null;
+        $user->cv_url = $validated['cv_url'] ?? null;
+        $user->filiere = $validated['filiere'] ?? null;
+        $user->niveau = $validated['niveau'] ?? null;
 
         if ($request->hasFile('cv')) {
             $path = $request->file('cv')->store('cvs', 'public');
@@ -153,12 +142,8 @@ class AuthController extends Controller
     }
 
     // Update profile cover photo
-    public function updateCover(Request $request, $handle = null)
+    public function updateCover(UpdateCoverPhotoRequest $request, $handle = null)
     {
-        $request->validate([
-            'cover_photo' => 'required|image|max:4096',
-        ]);
-
         $user = Auth::user();
         $path = $request->file('cover_photo')->store('cover_photos', 'public');
         $user->cover_photo = $path;
@@ -168,12 +153,8 @@ class AuthController extends Controller
     }
 
     // Update profile avatar
-    public function updateAvatar(Request $request, $handle = null)
+    public function updateAvatar(UpdateAvatarRequest $request, $handle = null)
     {
-        $request->validate([
-            'avatar' => 'required|image|max:4096',
-        ]);
-
         $user = Auth::user();
         $path = $request->file('avatar')->store('avatars', 'public');
         $user->avatar = $path;

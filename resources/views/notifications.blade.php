@@ -15,7 +15,15 @@
     @else
       <div class="mt-6 space-y-4">
         @foreach($notifications as $notification)
-          <div class="rounded-3xl border p-5 shadow-sm {{ $notification->read_at ? 'bg-kraft-light border-kraft-dark/30' : 'bg-white border-ardoise/20' }}">
+          @php
+            $notificationUrl = null;
+            if ($notification->type === 'friend_request') {
+              $notificationUrl = route('profil.show', $notification->data['sender_handle'] ?? $notification->data['sender_id']);
+            } elseif ($notification->type === 'friend_request_accepted') {
+              $notificationUrl = route('profil.show', $notification->data['receiver_handle'] ?? $notification->data['receiver_id']);
+            }
+          @endphp
+          <div data-notification-url="{{ $notificationUrl }}" data-notification-id="{{ $notification->id }}" class="notification-card rounded-3xl border p-5 shadow-sm {{ $notification->read_at ? 'bg-kraft-light border-kraft-dark/30' : 'bg-white border-ardoise/20' }}">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div class="min-w-0">
                 @if($notification->type === 'friend_request')
@@ -86,6 +94,7 @@
                 body: formData,
                 headers: {
                   'X-Requested-With': 'XMLHttpRequest',
+                  'X-CSRF-TOKEN': window.USN.csrfToken,
                   'Accept': 'application/json',
                 },
               });
@@ -108,9 +117,8 @@
           });
         });
 
-        document.querySelectorAll('form.ajax-mark-read').forEach(function (form) {
-          form.addEventListener('submit', async function (e) {
-            e.preventDefault();
+        function markNotificationRead(form) {
+          return new Promise(async function (resolve, reject) {
             const action = form.getAttribute('action');
             const token = form.querySelector('input[name="_token"]').value;
 
@@ -124,11 +132,25 @@
                 },
               });
 
-              if (!res.ok) throw new Error('Erreur réseau');
+              if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || 'Erreur réseau');
+              }
 
               const data = await res.json();
+              resolve(data);
+            } catch (err) {
+              reject(err);
+            }
+          });
+        }
 
-              // Update all notification badges
+        document.querySelectorAll('form.ajax-mark-read').forEach(function (form) {
+          form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            try {
+              const data = await markNotificationRead(form);
+
               document.querySelectorAll('.unread-notifications-badge').forEach(function (el) {
                 if (data.unreadNotifications && data.unreadNotifications > 0) {
                   el.textContent = data.unreadNotifications;
@@ -137,9 +159,8 @@
                 }
               });
 
-              // Update UI for this notification: remove the button and mark as read
               form.remove();
-              const card = form.closest('.rounded-3xl');
+              const card = form.closest('.notification-card');
               if (card) {
                 card.classList.remove('bg-white', 'border-ardoise/20');
                 card.classList.add('bg-kraft-light', 'border-kraft-dark/30');
@@ -150,6 +171,40 @@
               console.error(err);
               alert('Impossible de marquer la notification comme lue.');
             }
+          });
+        });
+
+        document.querySelectorAll('.notification-card').forEach(function (card) {
+          const url = card.dataset.notificationUrl;
+          const notificationId = card.dataset.notificationId;
+          const markReadForm = card.querySelector('form.ajax-mark-read');
+
+          if (!url) {
+            return;
+          }
+
+          card.style.cursor = 'pointer';
+          card.addEventListener('click', async function (e) {
+            if (e.target.closest('form') || e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+              return;
+            }
+
+            if (markReadForm) {
+              try {
+                const data = await markNotificationRead(markReadForm);
+                document.querySelectorAll('.unread-notifications-badge').forEach(function (el) {
+                  if (data.unreadNotifications && data.unreadNotifications > 0) {
+                    el.textContent = data.unreadNotifications;
+                  } else {
+                    el.remove();
+                  }
+                });
+              } catch (err) {
+                console.error(err);
+              }
+            }
+
+            window.location.href = url;
           });
         });
       });

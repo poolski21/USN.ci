@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Evenement\EvenementController;
 use App\Http\Controllers\SocialController;
@@ -34,9 +35,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/messages/{handle}', [SocialController::class, 'sendMessage'])->name('messages.send');
     Route::get('/notifications', [SocialController::class, 'notifications'])->name('notifications');
     Route::post('/notifications/{id}/lu', [SocialController::class, 'markNotificationRead'])->name('notifications.read');
+    Route::get('/live-updates', [SocialController::class, 'liveUpdates'])->name('live.updates');
     Route::get('/search', [AuthController::class, 'searchFriends'])->name('search');
     Route::post('/deconnexion', [AuthController::class, 'logout'])->name('logout');
-    Route::get('/stage', fn() => view('stage'))->name('stage');
     Route::get('/documents', fn() => view('documents'))->name('documents');
     Route::get('/groupes/nouveau', [SocialController::class, 'showCreateGroup'])->name('groupes.create');
     Route::post('/groupes', [SocialController::class, 'storeGroup'])->name('groupes.store');
@@ -61,5 +62,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/evenements/{evenement}/comment', [EvenementController::class, 'comment'])->name('evenements.comment');
     Route::post('/evenements/{evenement}/share', [EvenementController::class, 'share'])->name('evenements.share');
     Route::get('/profil/{handle?}', [AuthController::class, 'showProfil'])->name('profil.show');
+
+    Route::get('/admin', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/developpeur/dashboard/stats', [AdminController::class, 'stats'])->name('admin.dashboard.stats');
 });
 
