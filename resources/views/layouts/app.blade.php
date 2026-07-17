@@ -460,7 +460,16 @@
 
       const openMobileMenu = () => {
         if (!mobileMenuDrawer || !mobileMenuPanel) return;
+        // compute header height to position panel below navbar
+        const header = document.querySelector('header.sticky');
+        const headerRect = header ? header.getBoundingClientRect() : { height: 64, bottom: 64 };
+        const headerHeight = Math.round(headerRect.height || 64);
+        mobileMenuPanel.style.top = headerHeight + 'px';
+        mobileMenuPanel.style.height = `calc(100vh - ${headerHeight}px)`;
         mobileMenuDrawer.classList.remove('hidden');
+        // animate backdrop
+        mobileMenuBackdrop?.classList.remove('opacity-0');
+        mobileMenuBackdrop?.classList.add('opacity-100');
         mobileMenuPanel.classList.remove('translate-x-full');
         mobileMenuPanel.classList.add('translate-x-0');
         mobileMenuOpen?.setAttribute('aria-expanded', 'true');
@@ -469,12 +478,19 @@
 
       const closeMobileMenu = () => {
         if (!mobileMenuDrawer || !mobileMenuPanel) return;
+        mobileMenuBackdrop?.classList.remove('opacity-100');
+        mobileMenuBackdrop?.classList.add('opacity-0');
         mobileMenuPanel.classList.remove('translate-x-0');
         mobileMenuPanel.classList.add('translate-x-full');
         mobileMenuOpen?.setAttribute('aria-expanded', 'false');
         document.body.style.overflow = '';
         setTimeout(() => {
           mobileMenuDrawer?.classList.add('hidden');
+          // reset inline styles
+          if (mobileMenuPanel) {
+            mobileMenuPanel.style.top = '';
+            mobileMenuPanel.style.height = '';
+          }
         }, 300);
       };
 

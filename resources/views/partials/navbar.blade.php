@@ -62,9 +62,9 @@
         <i class="ti ti-menu-2" aria-hidden="true"></i>
       </button>
 
-      <div id="mobile-menu-drawer" class="fixed inset-0 z-50 hidden md:hidden">
-        <div id="mobile-menu-backdrop" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm transition-opacity duration-300"></div>
-        <aside id="mobile-menu-panel" class="fixed top-16 right-0 h-[calc(100vh-4rem)] w-full max-w-xs bg-white shadow-2xl border-l border-ardoise/10 p-4 transition-transform duration-300 ease-in-out transform translate-x-full dark:bg-slate-950 dark:border-slate-700 sm:max-w-sm">
+      <div id="mobile-menu-drawer" class="fixed inset-0 z-50 hidden md:hidden" aria-hidden="true">
+        <div id="mobile-menu-backdrop" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity duration-300 opacity-0 z-40"></div>
+        <aside id="mobile-menu-panel" class="fixed right-0 top-16 bottom-0 h-auto w-full max-w-xs bg-white shadow-2xl border-l border-ardoise/10 p-4 transition-transform duration-300 ease-in-out transform translate-x-full dark:bg-slate-950 dark:border-slate-700 sm:max-w-sm z-50" aria-hidden="true">
           <div class="flex items-center justify-between mb-4">
             <span class="text-sm font-semibold text-ardoise">Menu</span>
             <button id="mobile-menu-close" type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-ardoise/10 bg-white text-ardoise transition-colors hover:border-ardoise/40 hover:bg-ardoise/5" aria-label="Fermer le menu mobile">
