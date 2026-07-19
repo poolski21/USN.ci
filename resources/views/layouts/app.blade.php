@@ -233,6 +233,12 @@
       .avatar-ring { width: 84px; height: 84px; font-size: 28px; margin-top: -42px; }
       .cover-zone { height: 160px; }
     }
+    /* Mobile menu safe-area and smooth scrolling for iOS */
+    #mobile-menu-panel {
+      padding-top: env(safe-area-inset-top, 0.75rem);
+      -webkit-overflow-scrolling: touch;
+      overflow-y: auto;
+    }
   </style>
   @stack('head')
 </head>
@@ -568,9 +574,27 @@
         }, 300);
       };
 
-      mobileMenuOpen?.addEventListener('click', openMobileMenu);
+      mobileMenuOpen?.addEventListener('click', function () {
+        const expanded = mobileMenuOpen.getAttribute('aria-expanded') === 'true';
+        if (expanded) {
+          closeMobileMenu();
+        } else {
+          openMobileMenu();
+        }
+      });
       mobileMenuClose?.addEventListener('click', closeMobileMenu);
       mobileMenuBackdrop?.addEventListener('click', closeMobileMenu);
+
+      // Close the panel when any link inside is clicked (behaviour like welcome page)
+      try {
+        mobileMenuPanel?.querySelectorAll('a').forEach(link => {
+          link.addEventListener('click', () => {
+            closeMobileMenu();
+          });
+        });
+      } catch (e) {
+        // ignore if panel not present or no links
+      }
 
       // Drag to close/open logic for left drawer
       const mobileMenuEdge = document.getElementById('mobile-menu-edge');
