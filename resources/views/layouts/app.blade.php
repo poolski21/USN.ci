@@ -527,7 +527,8 @@
         // animate backdrop
         mobileMenuBackdrop?.classList.remove('opacity-0');
         mobileMenuBackdrop?.classList.add('opacity-100');
-        mobileMenuPanel.classList.remove('translate-x-full');
+        // ensure left-drawer classes: remove closed (-translate-x-full) and add open (translate-x-0)
+        mobileMenuPanel.classList.remove('-translate-x-full');
         mobileMenuPanel.classList.add('translate-x-0');
         mobileMenuOpen?.setAttribute('aria-expanded', 'true');
         document.body.style.overflow = 'hidden';
@@ -552,8 +553,9 @@
         if (!mobileMenuDrawer || !mobileMenuPanel) return;
         mobileMenuBackdrop?.classList.remove('opacity-100');
         mobileMenuBackdrop?.classList.add('opacity-0');
+        // close left-drawer: remove open and add closed
         mobileMenuPanel.classList.remove('translate-x-0');
-        mobileMenuPanel.classList.add('translate-x-full');
+        mobileMenuPanel.classList.add('-translate-x-full');
         mobileMenuOpen?.setAttribute('aria-expanded', 'false');
         document.body.style.overflow = '';
         setTimeout(() => {
@@ -569,6 +571,78 @@
       mobileMenuOpen?.addEventListener('click', openMobileMenu);
       mobileMenuClose?.addEventListener('click', closeMobileMenu);
       mobileMenuBackdrop?.addEventListener('click', closeMobileMenu);
+
+      // Drag to close/open logic for left drawer
+      const mobileMenuEdge = document.getElementById('mobile-menu-edge');
+      let draggingPanel = false;
+      let dragStartX = 0;
+      let currentTranslate = 0;
+      const panelWidth = () => mobileMenuPanel ? mobileMenuPanel.getBoundingClientRect().width : 0;
+
+      const startDrag = (clientX) => {
+        draggingPanel = true;
+        dragStartX = clientX;
+        // disable transition during drag
+        if (mobileMenuPanel) mobileMenuPanel.style.transition = 'none';
+      };
+
+      const dragMove = (clientX) => {
+        if (!draggingPanel || !mobileMenuPanel) return;
+        const dx = clientX - dragStartX;
+        // when open, dx negative => move left to close. when opening from edge, dx positive => move right to reveal.
+        // clamp so panel doesn't move beyond fully open (0) or fully closed (-panelWidth)
+        const w = panelWidth();
+        let translate = Math.min(0, Math.max(-w, dx));
+        // if we started from closed edge sensor, dx will be negative; handle separately in edge handlers.
+        mobileMenuPanel.style.transform = `translateX(${translate}px)`;
+        currentTranslate = translate;
+      };
+
+      const endDrag = () => {
+        if (!draggingPanel || !mobileMenuPanel) return;
+        draggingPanel = false;
+        // restore transition
+        mobileMenuPanel.style.transition = '';
+        const threshold = panelWidth() * 0.3; // 30% to trigger close/open
+        // if dragged left beyond threshold -> close
+        if (currentTranslate < -threshold) {
+          closeMobileMenu();
+        } else {
+          // revert to open
+          mobileMenuPanel.style.transform = '';
+          mobileMenuPanel.classList.remove('-translate-x-full');
+          mobileMenuPanel.classList.add('translate-x-0');
+          mobileMenuOpen?.setAttribute('aria-expanded', 'true');
+        }
+        currentTranslate = 0;
+      };
+
+      // panel pointer handlers (for closing drag)
+      mobileMenuPanel?.addEventListener('pointerdown', function (e) {
+        // only start drag if pointer is near left edge of panel (to avoid interfering with inner interactions)
+        const rect = mobileMenuPanel.getBoundingClientRect();
+        if (e.clientX - rect.left < 30) {
+          startDrag(e.clientX);
+          mobileMenuPanel.setPointerCapture(e.pointerId);
+        }
+      });
+      mobileMenuPanel?.addEventListener('pointermove', function (e) { dragMove(e.clientX); });
+      mobileMenuPanel?.addEventListener('pointerup', function (e) { endDrag(); mobileMenuPanel.releasePointerCapture(e.pointerId); });
+      mobileMenuPanel?.addEventListener('pointercancel', endDrag);
+
+      // edge sensor to start opening by dragging from far left
+      mobileMenuEdge?.addEventListener('pointerdown', function (e) {
+        // reveal drawer immediately
+        mobileMenuDrawer.classList.remove('hidden');
+        mobileMenuBackdrop?.classList.remove('opacity-0');
+        mobileMenuBackdrop?.classList.add('opacity-100');
+        // ensure panel is positioned offscreen left
+        mobileMenuPanel.classList.remove('translate-x-0');
+        mobileMenuPanel.classList.add('-translate-x-full');
+        startDrag(e.clientX);
+      });
+      document.addEventListener('pointermove', function (e) { if (draggingPanel) dragMove(e.clientX); });
+      document.addEventListener('pointerup', function (e) { if (draggingPanel) endDrag(); });
 
       document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {

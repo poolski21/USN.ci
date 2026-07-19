@@ -64,7 +64,7 @@
 
       <div id="mobile-menu-drawer" class="fixed inset-0 z-50 hidden md:hidden" aria-hidden="true">
         <div id="mobile-menu-backdrop" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity duration-300 opacity-0 z-40"></div>
-        <aside id="mobile-menu-panel" class="fixed right-0 top-16 bottom-0 h-auto w-full max-w-xs bg-white shadow-2xl border-l border-ardoise/10 p-4 transition-transform duration-300 ease-in-out transform translate-x-full dark:bg-slate-950 dark:border-slate-700 sm:max-w-sm z-50" aria-hidden="true">
+        <aside id="mobile-menu-panel" class="fixed left-0 top-16 bottom-0 h-auto w-full max-w-xs bg-white shadow-2xl border-r border-ardoise/10 p-4 transition-transform duration-300 ease-in-out transform -translate-x-full dark:bg-slate-950 dark:border-slate-700 sm:max-w-sm z-50" aria-hidden="true">
           <div class="flex items-center justify-between mb-4">
             <span class="text-sm font-semibold text-ardoise">Menu</span>
             <button id="mobile-menu-close" type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-ardoise/10 bg-white text-ardoise transition-colors hover:border-ardoise/40 hover:bg-ardoise/5" aria-label="Fermer le menu mobile">
@@ -110,6 +110,8 @@
           </nav>
         </aside>
       </div>
+      <!-- left edge sensor to detect pull-to-open gestures -->
+      <div id="mobile-menu-edge" class="fixed left-0 top-0 bottom-0 w-4 z-30 md:hidden" aria-hidden="true"></div>
     </div>
   </div>
 </header>
