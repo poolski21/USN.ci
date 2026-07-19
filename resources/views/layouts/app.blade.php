@@ -8,6 +8,8 @@
   <script>
     window.USN = window.USN || {};
     window.USN.csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    window.USN.getMobileMenuLogs = function () { return []; };
+    window.USN.downloadMobileMenuLogs = function () { console.warn('Mobile menu logs not initialized yet'); };
   </script>
   <title>@yield('title', 'USN')</title>
   <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
@@ -458,6 +460,44 @@
       const mobileMenuBackdrop = document.getElementById('mobile-menu-backdrop');
       const mobileMenuPanel = document.getElementById('mobile-menu-panel');
 
+      // Mobile menu logging helpers: store recent events in localStorage for debugging
+      const MOBILE_MENU_LOGS_KEY = 'USN_mobile_menu_logs';
+
+      const saveMobileMenuLog = (entry) => {
+        try {
+          const maxEntries = 200;
+          const raw = localStorage.getItem(MOBILE_MENU_LOGS_KEY);
+          const arr = raw ? JSON.parse(raw) : [];
+          arr.push(Object.assign({ ts: new Date().toISOString() }, entry));
+          if (arr.length > maxEntries) arr.splice(0, arr.length - maxEntries);
+          localStorage.setItem(MOBILE_MENU_LOGS_KEY, JSON.stringify(arr));
+          console.info('[mobile-menu] saved log (total):', arr.length);
+        } catch (e) {
+          console.warn('[mobile-menu] could not save log', e);
+        }
+      };
+
+      window.USN = window.USN || {};
+      window.USN.getMobileMenuLogs = () => {
+        try { return JSON.parse(localStorage.getItem(MOBILE_MENU_LOGS_KEY) || '[]'); } catch (e) { return []; }
+      };
+      window.USN.downloadMobileMenuLogs = () => {
+        try {
+          const logs = window.USN.getMobileMenuLogs();
+          const blob = new Blob([JSON.stringify(logs, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'mobile-menu-logs.json';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          console.warn('downloadMobileMenuLogs error', e);
+        }
+      };
+
       const openMobileMenu = () => {
         if (!mobileMenuDrawer || !mobileMenuPanel) return;
         // compute header height to position panel below navbar
@@ -466,6 +506,23 @@
         const headerHeight = Math.round(headerRect.height || 64);
         mobileMenuPanel.style.top = headerHeight + 'px';
         mobileMenuPanel.style.height = `calc(100vh - ${headerHeight}px)`;
+        // debug logs for mobile menu positioning
+        try {
+          console.log('[mobile-menu] open - headerRect:', headerRect);
+          console.log('[mobile-menu] open - headerHeight:', headerHeight);
+          console.log('[mobile-menu] open - panel inline top/height before open:', mobileMenuPanel.style.top, mobileMenuPanel.style.height);
+        } catch (e) {
+          // ignore logging errors
+        }
+
+        // persist initial state to localStorage for later inspection
+        try {
+          saveMobileMenuLog({
+            event: 'open.start',
+            header: { height: headerRect.height, top: headerRect.top, bottom: headerRect.bottom },
+            panelInline: { top: mobileMenuPanel.style.top, height: mobileMenuPanel.style.height }
+          });
+        } catch (e) {}
         mobileMenuDrawer.classList.remove('hidden');
         // animate backdrop
         mobileMenuBackdrop?.classList.remove('opacity-0');
@@ -474,6 +531,21 @@
         mobileMenuPanel.classList.add('translate-x-0');
         mobileMenuOpen?.setAttribute('aria-expanded', 'true');
         document.body.style.overflow = 'hidden';
+        setTimeout(() => {
+          try {
+            const panelTop = getComputedStyle(mobileMenuPanel).top;
+            const panelHeight = getComputedStyle(mobileMenuPanel).height;
+            const backdropOpacity = mobileMenuBackdrop ? getComputedStyle(mobileMenuBackdrop).opacity : null;
+            console.log('[mobile-menu] open - panel computed top:', panelTop);
+            console.log('[mobile-menu] open - panel computed height:', panelHeight);
+            console.log('[mobile-menu] open - backdrop opacity:', backdropOpacity);
+            saveMobileMenuLog({
+              event: 'open.complete',
+              panel: { top: panelTop, height: panelHeight },
+              backdropOpacity: backdropOpacity
+            });
+          } catch (e) {}
+        }, 50);
       };
 
       const closeMobileMenu = () => {

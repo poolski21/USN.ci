@@ -66,7 +66,14 @@
         <div id="mobile-menu-backdrop" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity duration-300 opacity-0 z-40"></div>
         <aside id="mobile-menu-panel" class="fixed right-0 top-16 bottom-0 h-auto w-full max-w-xs bg-white shadow-2xl border-l border-ardoise/10 p-4 transition-transform duration-300 ease-in-out transform translate-x-full dark:bg-slate-950 dark:border-slate-700 sm:max-w-sm z-50" aria-hidden="true">
           <div class="flex items-center justify-between mb-4">
-            <span class="text-sm font-semibold text-ardoise">Menu</span>
+            <span class="text-sm font-semibold text-ardoi            const header = document.querySelector('header.sticky');
+            console.log('header rect:', header ? header.getBoundingClientRect() : null);
+            const panel = document.getElementById('mobile-menu-panel');
+            console.log('panel computed top:', panel ? getComputedStyle(panel).top : null);
+            console.log('panel computed height:', panel ? getComputedStyle(panel).height : null);
+            console.log('panel transform:', panel ? getComputedStyle(panel).transform : null);
+            const backdrop = document.getElementById('mobile-menu-backdrop');
+            console.log('backdrop opacity:', backdrop ? getComputedStyle(backdrop).opacity : null);se">Menu</span>
             <button id="mobile-menu-close" type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-ardoise/10 bg-white text-ardoise transition-colors hover:border-ardoise/40 hover:bg-ardoise/5" aria-label="Fermer le menu mobile">
               <i class="ti ti-x" aria-hidden="true"></i>
             </button>
