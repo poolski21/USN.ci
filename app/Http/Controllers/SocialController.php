@@ -716,6 +716,17 @@ class SocialController extends Controller
         return view('notifications', compact('notifications'));
     }
 
+    public function showFriendRequests()
+    {
+        $pendingRequests = FriendRequest::where('receiver_id', Auth::id())
+            ->where('status', 'pending')
+            ->with('sender')
+            ->latest('created_at')
+            ->get();
+
+        return view('friend-requests', compact('pendingRequests'));
+    }
+
     public function markNotificationRead(int $id)
     {
         $notification = Auth::user()->socialNotifications()->findOrFail($id);

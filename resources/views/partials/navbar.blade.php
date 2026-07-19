@@ -63,8 +63,8 @@
       </button>
 
       <div id="mobile-menu-drawer" class="fixed inset-0 z-50 hidden md:hidden" aria-hidden="true">
-        <div id="mobile-menu-backdrop" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity duration-300 opacity-0 z-50"></div>
-        <aside id="mobile-menu-panel" class="fixed left-0 top-16 bottom-0 h-auto w-full max-w-xs bg-white shadow-2xl border-r border-ardoise/10 p-4 transition-transform duration-300 ease-in-out transform -translate-x-full dark:bg-slate-950 dark:border-slate-700 sm:max-w-sm z-60" aria-hidden="true" style="padding-top: env(safe-area-inset-top, 0.75rem); -webkit-overflow-scrolling: touch; overflow-y: auto;">
+        <div id="mobile-menu-backdrop" class="pointer-events-none fixed inset-0 bg-slate-950/75 transition-opacity duration-300 opacity-0 z-40"></div>
+        <aside id="mobile-menu-panel" class="fixed left-0 top-16 bottom-0 h-auto w-full max-w-xs bg-white shadow-2xl border-r border-ardoise/10 p-4 transition-transform duration-300 ease-in-out transform -translate-x-full dark:bg-slate-950 dark:border-slate-700 sm:max-w-sm z-50" aria-hidden="true" style="padding-top: env(safe-area-inset-top, 0.75rem); -webkit-overflow-scrolling: touch; overflow-y: auto;">
           <div class="flex items-center justify-between mb-4">
             <span class="text-sm font-semibold text-ardoise">Menu</span>
             <button id="mobile-menu-close" type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-ardoise/10 bg-white text-ardoise transition-colors hover:border-ardoise/40 hover:bg-ardoise/5" aria-label="Fermer le menu mobile">
@@ -90,6 +90,7 @@
                   <span class="absolute right-4 top-3 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-moutarde px-1.5 text-[10px] font-semibold text-ardoise unread-messages-badge">{{ $unreadMessages }}</span>
                 @endif
               </a>
+              <a href="{{ route('friend.requests.show') }}" class="rounded-2xl px-4 py-3 text-sm text-ardoise transition-colors hover:bg-kraft-light hover:text-moutarde">Demandes d'ami</a>
               <a href="{{ route('notifications') }}" class="relative rounded-2xl px-4 py-3 text-sm text-ardoise transition-colors hover:bg-kraft-light hover:text-moutarde">
                 Notifications
                 @if(!empty($unreadNotifications) && $unreadNotifications > 0)
