@@ -101,7 +101,7 @@
         <div id="messages-container" class="flex-1 min-h-[40vh] overflow-y-auto px-6 py-5 space-y-4 bg-[#F3F1EB] dark:bg-slate-950/90">
           @forelse($messages as $message)
             <div class="flex {{ $message->sender_id === auth()->id() ? 'justify-end' : 'justify-start' }}">
-              <div class="max-w-[85%] rounded-[28px] p-4 shadow-sm {{ $message->sender_id === auth()->id() ? 'bg-[#F8F2E6] text-ardoise rounded-br-[6px] dark:bg-slate-800 dark:text-gray-100' : 'bg-white text-ardoise rounded-bl-[6px] border border-ardoise/10 dark:bg-slate-900/90 dark:text-gray-100 dark:border-slate-700' }}">
+              <div data-own-message="{{ $message->sender_id === auth()->id() ? 'true' : 'false' }}" data-message-id="{{ $message->id }}" class="message-bubble max-w-[85%] rounded-[28px] p-4 shadow-sm relative {{ $message->sender_id === auth()->id() ? 'bg-[#F8F2E6] text-ardoise rounded-br-[6px] dark:bg-slate-800 dark:text-gray-100' : 'bg-white text-ardoise rounded-bl-[6px] border border-ardoise/10 dark:bg-slate-900/90 dark:text-gray-100 dark:border-slate-700' }}">
                 @if($message->body)
                   <p class="text-sm leading-relaxed">{{ $message->body }}</p>
                 @endif
@@ -122,14 +122,11 @@
                 @endif
 
                 @if($message->sender_id === auth()->id())
-                  <div class="mt-3 flex items-center justify-end gap-2 text-xs">
-                    <button type="button" class="message-edit-button inline-flex items-center gap-2 rounded-full border border-ardoise/20 bg-white px-3 py-2 text-ardoise transition-colors hover:border-ardoise/40 hover:bg-ardoise/5">Modifier</button>
-                    <form action="{{ route('messages.message.delete', ['handle' => $selected->handle ?? $selected->id, 'message' => $message->id]) }}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer ce message ?');">
-                      @csrf
-                      @method('DELETE')
-                      <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-2 text-red-600 transition-colors hover:bg-red-100">Supprimer</button>
-                    </form>
+                  <div class="message-actions-menu hidden absolute top-3 right-3 z-50 w-40 rounded-2xl border border-ardoise/10 bg-white p-2 shadow-lg dark:bg-slate-900 dark:border-slate-700">
+                    <button type="button" class="message-action-edit inline-flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold text-ardoise hover:bg-ardoise/5">Modifier</button>
+                    <button type="button" class="message-action-delete inline-flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50">Supprimer</button>
                   </div>
+
                   <div class="message-edit-form hidden mt-3 rounded-3xl border border-ardoise/10 bg-[#F8F2E6] p-4 dark:bg-slate-900/90 dark:border-slate-700">
                     <form action="{{ route('messages.message.update', ['handle' => $selected->handle ?? $selected->id, 'message' => $message->id]) }}" method="POST" class="space-y-3">
                       @csrf
@@ -142,6 +139,11 @@
                       </div>
                     </form>
                   </div>
+
+                  <form class="message-delete-form hidden" action="{{ route('messages.message.delete', ['handle' => $selected->handle ?? $selected->id, 'message' => $message->id]) }}" method="POST">
+                    @csrf
+                    @method('DELETE')
+                  </form>
                 @endif
 
                 <p class="text-[10px] text-gray-400 mt-3 text-right">{{ $message->created_at->format('d/m/Y H:i') }}</p>
@@ -367,29 +369,90 @@
 
         scrollMessagesToBottom();
 
-        function setupEditButtons() {
-          document.querySelectorAll('.message-edit-button').forEach(function (button) {
-            button.addEventListener('click', function () {
-              const bubble = button.closest('div[class*="max-w-"]');
-              if (!bubble) return;
-              const editForm = bubble.querySelector('.message-edit-form');
-              if (!editForm) return;
-              editForm.classList.toggle('hidden');
-            });
-          });
-
-          document.querySelectorAll('.message-edit-cancel-button').forEach(function (button) {
-            button.addEventListener('click', function () {
-              const bubble = button.closest('div[class*="max-w-"]');
-              if (!bubble) return;
-              const editForm = bubble.querySelector('.message-edit-form');
-              if (!editForm) return;
-              editForm.classList.add('hidden');
-            });
+        function hideAllActionMenus() {
+          document.querySelectorAll('.message-actions-menu').forEach(function (menu) {
+            menu.classList.add('hidden');
           });
         }
 
-        setupEditButtons();
+        function setupMessageActions() {
+          const bubbles = document.querySelectorAll('.message-bubble[data-own-message="true"]');
+          const longPressDelay = 500;
+
+          bubbles.forEach(function (bubble) {
+            let timer = null;
+
+            function showMenu() {
+              hideAllActionMenus();
+              const menu = bubble.querySelector('.message-actions-menu');
+              if (menu) {
+                menu.classList.remove('hidden');
+              }
+            }
+
+            function cancelPress() {
+              if (timer) {
+                clearTimeout(timer);
+                timer = null;
+              }
+            }
+
+            bubble.addEventListener('mousedown', function (event) {
+              if (event.button !== 0) {
+                return;
+              }
+              timer = setTimeout(showMenu, longPressDelay);
+            });
+
+            bubble.addEventListener('touchstart', function () {
+              timer = setTimeout(showMenu, longPressDelay);
+            });
+
+            bubble.addEventListener('mouseup', cancelPress);
+            bubble.addEventListener('mouseleave', cancelPress);
+            bubble.addEventListener('touchend', cancelPress);
+            bubble.addEventListener('touchcancel', cancelPress);
+            bubble.addEventListener('contextmenu', function (event) {
+              event.preventDefault();
+              showMenu();
+            });
+
+            const editButton = bubble.querySelector('.message-action-edit');
+            const deleteButton = bubble.querySelector('.message-action-delete');
+            const editForm = bubble.querySelector('.message-edit-form');
+            const deleteForm = bubble.querySelector('.message-delete-form');
+
+            if (editButton && editForm) {
+              editButton.addEventListener('click', function () {
+                editForm.classList.toggle('hidden');
+                hideAllActionMenus();
+              });
+            }
+
+            if (deleteButton && deleteForm) {
+              deleteButton.addEventListener('click', function () {
+                hideAllActionMenus();
+                if (confirm('Voulez-vous vraiment supprimer ce message ?')) {
+                  deleteForm.submit();
+                }
+              });
+            }
+          });
+        }
+
+        setupMessageActions();
+
+        document.addEventListener('click', function (event) {
+          if (!event.target.closest('.message-actions-menu') && !event.target.closest('.message-bubble[data-own-message="true"]')) {
+            hideAllActionMenus();
+          }
+        });
+
+        document.addEventListener('touchstart', function (event) {
+          if (!event.target.closest('.message-actions-menu') && !event.target.closest('.message-bubble[data-own-message="true"]')) {
+            hideAllActionMenus();
+          }
+        });
 
         @if($selected)
           (async function () {
