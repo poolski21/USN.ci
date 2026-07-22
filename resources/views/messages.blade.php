@@ -70,9 +70,24 @@
             </div>
           </div>
           @if($selected)
-            <div class="flex items-center gap-3 text-sm text-gray-500">
-              <span class="inline-flex h-2.5 w-2.5 rounded-full bg-green-400"></span>
-              Actif récemment
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div class="flex items-center gap-3 text-sm text-gray-500">
+                <span class="inline-flex h-2.5 w-2.5 rounded-full bg-green-400"></span>
+                Actif récemment
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <form action="{{ route('messages.call.start', ['handle' => $selected->handle ?? $selected->id]) }}" method="POST">
+                  @csrf
+                  <input type="hidden" name="type" value="audio">
+                  <button type="submit" class="rounded-full border border-ardoise/20 bg-white px-4 py-2 text-sm font-semibold text-ardoise hover:bg-ardoise/5 transition-colors">Appel audio</button>
+                </form>
+                <form action="{{ route('messages.call.start', ['handle' => $selected->handle ?? $selected->id]) }}" method="POST">
+                  @csrf
+                  <input type="hidden" name="type" value="video">
+                  <button type="submit" class="rounded-full border border-ardoise/20 bg-white px-4 py-2 text-sm font-semibold text-ardoise hover:bg-ardoise/5 transition-colors">Appel vidéo</button>
+                </form>
+                <a href="{{ route('messages.call.incoming') }}" class="rounded-full border border-ardoise/20 bg-white px-4 py-2 text-sm font-semibold text-ardoise hover:bg-ardoise/5 transition-colors">Appels entrants</a>
+              </div>
             </div>
           @endif
         </div>
@@ -114,13 +129,17 @@
         <form action="{{ route('messages.send', ['handle' => $selected->handle ?? $selected->id]) }}" method="POST" enctype="multipart/form-data" class="border-t border-ardoise/10 bg-white p-6 dark:bg-slate-950/90 dark:border-slate-700" id="message-form">
           @csrf
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <label for="message-attachment" class="flex h-12 w-12 items-center justify-center rounded-full border border-ardoise/10 bg-kraft-light text-ardoise cursor-pointer transition-colors hover:bg-kraft/90" aria-label="Ajouter une pièce jointe">
-              <i class="ti ti-paperclip" aria-hidden="true"></i>
-            </label>
+            <div class="flex items-center gap-3">
+              <label for="message-attachment" class="flex h-12 w-12 items-center justify-center rounded-full border border-ardoise/10 bg-kraft-light text-ardoise cursor-pointer transition-colors hover:bg-kraft/90" aria-label="Ajouter une pièce jointe">
+                <i class="ti ti-paperclip" aria-hidden="true"></i>
+              </label>
+              <button type="button" id="voice-record-button" class="inline-flex h-12 items-center justify-center rounded-full border border-ardoise/10 bg-kraft-light px-4 py-2 text-sm font-semibold text-ardoise hover:bg-kraft/90 transition-colors">🎤 Enregistrer</button>
+            </div>
             <input type="file" name="attachment" id="message-attachment" class="hidden" accept="*/*">
             <textarea name="body" id="message-body" rows="1" class="min-h-[48px] flex-1 resize-none rounded-full border border-ardoise/10 bg-[#F8F2E6] dark:bg-slate-800 dark:border-slate-700 px-4 py-3 text-sm text-ardoise dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-moutarde/40 dark:focus:ring-moutarde/40 placeholder:text-gray-500 dark:placeholder:text-gray-400" placeholder="Écris un message..." aria-label="Écrire un message"></textarea>
             <button type="submit" id="message-send-button" class="inline-flex h-12 items-center justify-center rounded-full bg-ardoise px-6 text-sm font-semibold text-kraft hover:bg-ardoise-light transition-colors">Envoyer</button>
           </div>
+          <div id="voice-preview" class="hidden mt-4 rounded-3xl border border-ardoise/10 bg-kraft-light p-4 text-sm text-gray-600 dark:bg-slate-900/90 dark:border-slate-700"></div>
           <div id="message-status" class="text-sm text-ardoise hidden mt-2" role="status" aria-live="polite"></div>
         </form>
       @else
@@ -216,6 +235,67 @@
           const div = document.createElement('div');
           div.textContent = text;
           return div.innerHTML;
+        }
+
+        const voiceButton = document.getElementById('voice-record-button');
+        const voicePreview = document.getElementById('voice-preview');
+        let mediaRecorder;
+        let audioChunks = [];
+
+        if (voiceButton) {
+          voiceButton.addEventListener('click', async function () {
+            if (!navigator.mediaDevices || !window.MediaRecorder) {
+              alert('Votre navigateur ne prend pas en charge l’enregistrement audio.');
+              return;
+            }
+
+            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+              try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.addEventListener('dataavailable', function (event) {
+                  if (event.data && event.data.size > 0) {
+                    audioChunks.push(event.data);
+                  }
+                });
+
+                mediaRecorder.addEventListener('stop', function () {
+                  const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                  const audioUrl = URL.createObjectURL(audioBlob);
+                  voicePreview.innerHTML = `
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p class="text-sm text-ardoise">Aperçu de l’enregistrement vocal</p>
+                        <audio controls src="${audioUrl}" class="mt-2 w-full rounded-3xl border border-ardoise/10 bg-white p-2"></audio>
+                      </div>
+                      <button id="attach-voice-button" type="button" class="inline-flex h-12 items-center justify-center rounded-full bg-ardoise px-4 py-2 text-sm font-semibold text-kraft hover:bg-ardoise-light transition-colors">Joindre au message</button>
+                    </div>
+                  `;
+                  voicePreview.classList.remove('hidden');
+
+                  document.getElementById('attach-voice-button').addEventListener('click', function () {
+                    const file = new File([audioBlob], 'message-voice.webm', { type: 'audio/webm' });
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    document.getElementById('message-attachment').files = dataTransfer.files;
+                    voicePreview.innerHTML = '<p class="text-sm text-ardoise">Fichier vocal prêt à être envoyé.</p>';
+                  });
+                });
+
+                mediaRecorder.start();
+                voiceButton.textContent = 'Arrêter';
+                voiceButton.classList.add('bg-red-600', 'text-white');
+              } catch (error) {
+                alert('Impossible d’accéder au microphone.');
+              }
+            } else if (mediaRecorder.state === 'recording') {
+              mediaRecorder.stop();
+              voiceButton.textContent = '🎤 Enregistrer';
+              voiceButton.classList.remove('bg-red-600', 'text-white');
+            }
+          });
         }
 
         function filterThreads() {
