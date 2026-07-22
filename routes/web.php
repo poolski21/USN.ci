@@ -34,6 +34,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/messages/{handle}', [SocialController::class, 'conversation'])->name('messages.conversation');
     Route::post('/messages/{handle}/read', [SocialController::class, 'markMessagesRead'])->name('messages.read');
     Route::post('/messages/{handle}', [SocialController::class, 'sendMessage'])->name('messages.send');
+    Route::post('/messages/{handle}/call', [SocialController::class, 'startCall'])->name('messages.call.start');
+    Route::get('/messages/call/incoming', [SocialController::class, 'incomingCall'])->name('messages.call.incoming');
+    Route::get('/messages/call/{session}', [SocialController::class, 'showCall'])->name('messages.call');
+    Route::post('/messages/call/{session}/offer', [SocialController::class, 'storeCallOffer'])->name('messages.call.offer');
+    Route::post('/messages/call/{session}/answer', [SocialController::class, 'storeCallAnswer'])->name('messages.call.answer');
+    Route::post('/messages/call/{session}/candidate', [SocialController::class, 'storeCallCandidate'])->name('messages.call.candidate');
+    Route::post('/messages/call/{session}/hangup', [SocialController::class, 'hangupCall'])->name('messages.call.hangup');
+    Route::post('/messages/call/{session}/reject', [SocialController::class, 'rejectCall'])->name('messages.call.reject');
+    Route::get('/messages/call/{session}/status', [SocialController::class, 'callStatus'])->name('messages.call.status');
     Route::get('/notifications', [SocialController::class, 'notifications'])->name('notifications');
     Route::post('/notifications/{id}/lu', [SocialController::class, 'markNotificationRead'])->name('notifications.read');
     Route::get('/live-updates', [SocialController::class, 'liveUpdates'])->name('live.updates');

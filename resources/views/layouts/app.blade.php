@@ -312,7 +312,7 @@
 
             previousState = currentState;
 
-            if (shouldRefresh && ['\/messages', '\/notifications', '\/profil'].some((segment) => window.location.pathname.includes(segment))) {
+            if (shouldRefresh && ['\/notifications', '\/profil'].some((segment) => window.location.pathname.includes(segment))) {
               window.location.reload();
             }
           } catch (error) {
