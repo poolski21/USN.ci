@@ -120,6 +120,30 @@
                     </div>
                   </div>
                 @endif
+
+                @if($message->sender_id === auth()->id())
+                  <div class="mt-3 flex items-center justify-end gap-2 text-xs">
+                    <button type="button" class="message-edit-button inline-flex items-center gap-2 rounded-full border border-ardoise/20 bg-white px-3 py-2 text-ardoise transition-colors hover:border-ardoise/40 hover:bg-ardoise/5">Modifier</button>
+                    <form action="{{ route('messages.message.delete', ['handle' => $selected->handle ?? $selected->id, 'message' => $message->id]) }}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer ce message ?');">
+                      @csrf
+                      @method('DELETE')
+                      <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-2 text-red-600 transition-colors hover:bg-red-100">Supprimer</button>
+                    </form>
+                  </div>
+                  <div class="message-edit-form hidden mt-3 rounded-3xl border border-ardoise/10 bg-[#F8F2E6] p-4 dark:bg-slate-900/90 dark:border-slate-700">
+                    <form action="{{ route('messages.message.update', ['handle' => $selected->handle ?? $selected->id, 'message' => $message->id]) }}" method="POST" class="space-y-3">
+                      @csrf
+                      @method('PATCH')
+                      <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">Modifier le message</label>
+                      <textarea name="body" rows="3" class="w-full resize-none rounded-2xl border border-ardoise/10 bg-white px-4 py-3 text-sm text-ardoise focus:outline-none focus:ring-2 focus:ring-moutarde/40 dark:bg-slate-950 dark:border-slate-700 dark:text-gray-100">{{ $message->body }}</textarea>
+                      <div class="flex flex-wrap items-center justify-between gap-3">
+                        <button type="submit" class="inline-flex h-10 items-center justify-center rounded-full bg-ardoise px-4 text-sm font-semibold text-kraft hover:bg-ardoise-light transition-colors">Enregistrer</button>
+                        <button type="button" class="message-edit-cancel-button inline-flex h-10 items-center justify-center rounded-full border border-ardoise/20 bg-white px-4 text-sm font-semibold text-ardoise hover:bg-ardoise/5 transition-colors">Annuler</button>
+                      </div>
+                    </form>
+                  </div>
+                @endif
+
                 <p class="text-[10px] text-gray-400 mt-3 text-right">{{ $message->created_at->format('d/m/Y H:i') }}</p>
               </div>
             </div>
@@ -171,6 +195,11 @@
           return;
         }
 
+        function scrollMessagesToBottom() {
+          if (!messagesContainer) return;
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
         if (form) {
           form.addEventListener('submit', async function (event) {
             event.preventDefault();
@@ -188,17 +217,21 @@
                 method: 'POST',
                 body: formData,
                 headers: {
+                  'Accept': 'application/json',
                   'X-Requested-With': 'XMLHttpRequest',
                   'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
                 },
               });
 
+              const contentType = response.headers.get('content-type') || '';
+              const isJson = contentType.includes('application/json');
+              const payload = isJson ? await response.json() : { message: await response.text() };
+
               if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Erreur lors de l’envoi du message.');
+                throw new Error(payload.message || 'Erreur lors de l’envoi du message.');
               }
 
-              const message = await response.json();
+              const message = payload;
               const newMessage = document.createElement('div');
               newMessage.className = 'max-w-[85%] rounded-3xl p-4 ml-auto bg-kraft-light text-ardoise';
               newMessage.innerHTML = `
@@ -222,6 +255,7 @@
               `;
 
               messagesContainer.appendChild(newMessage);
+              messagesContainer.scrollTop = messagesContainer.scrollHeight;
               form.reset();
               statusElement.textContent = 'Message envoyé.';
               statusElement.classList.remove('hidden');
@@ -233,6 +267,11 @@
               sendButton.textContent = 'Envoyer';
             }
           });
+        }
+
+        function scrollMessagesToBottom() {
+          if (!messagesContainer) return;
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
         function escapeHtml(text) {
@@ -325,6 +364,32 @@
           textarea.addEventListener('input', autoResizeTextarea);
           autoResizeTextarea();
         }
+
+        scrollMessagesToBottom();
+
+        function setupEditButtons() {
+          document.querySelectorAll('.message-edit-button').forEach(function (button) {
+            button.addEventListener('click', function () {
+              const bubble = button.closest('div[class*="max-w-"]');
+              if (!bubble) return;
+              const editForm = bubble.querySelector('.message-edit-form');
+              if (!editForm) return;
+              editForm.classList.toggle('hidden');
+            });
+          });
+
+          document.querySelectorAll('.message-edit-cancel-button').forEach(function (button) {
+            button.addEventListener('click', function () {
+              const bubble = button.closest('div[class*="max-w-"]');
+              if (!bubble) return;
+              const editForm = bubble.querySelector('.message-edit-form');
+              if (!editForm) return;
+              editForm.classList.add('hidden');
+            });
+          });
+        }
+
+        setupEditButtons();
 
         @if($selected)
           (async function () {

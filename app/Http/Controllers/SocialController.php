@@ -509,6 +509,45 @@ class SocialController extends Controller
         return redirect()->route('messages.conversation', ['handle' => $receiver->handle ?? $receiver->id])->with('status', 'Message envoyé.');
     }
 
+    public function updateMessage(Request $request, string $handle, SocialMessage $message)
+    {
+        $user = Auth::user();
+        $other = $this->findUserByHandle($handle);
+
+        if ($message->sender_id !== $user->id || $message->receiver_id !== $other->id) {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'body' => ['nullable', 'string'],
+        ]);
+
+        $body = trim($data['body'] ?? '');
+
+        if ($body === '' && ! $message->attachment_path && ! $message->attachment_public_id) {
+            return back()->withErrors(['body' => 'Le message ne peut pas être vide.'])->withInput();
+        }
+
+        $message->body = $body;
+        $message->save();
+
+        return back()->with('status', 'Message modifié.');
+    }
+
+    public function deleteMessage(string $handle, SocialMessage $message)
+    {
+        $user = Auth::user();
+        $other = $this->findUserByHandle($handle);
+
+        if ($message->sender_id !== $user->id || $message->receiver_id !== $other->id) {
+            abort(403);
+        }
+
+        $message->delete();
+
+        return back()->with('status', 'Message supprimé.');
+    }
+
     public function storePost(StorePostRequest $request)
     {
         $data = $request->validated();

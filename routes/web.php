@@ -34,6 +34,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/messages/{handle}', [SocialController::class, 'conversation'])->name('messages.conversation');
     Route::post('/messages/{handle}/read', [SocialController::class, 'markMessagesRead'])->name('messages.read');
     Route::post('/messages/{handle}', [SocialController::class, 'sendMessage'])->name('messages.send');
+    Route::patch('/messages/{handle}/message/{message}', [SocialController::class, 'updateMessage'])->name('messages.message.update');
+    Route::delete('/messages/{handle}/message/{message}', [SocialController::class, 'deleteMessage'])->name('messages.message.delete');
     Route::post('/messages/{handle}/call', [SocialController::class, 'startCall'])->name('messages.call.start');
     Route::get('/messages/call/incoming', [SocialController::class, 'incomingCall'])->name('messages.call.incoming');
     Route::get('/messages/call/{session}', [SocialController::class, 'showCall'])->name('messages.call');
