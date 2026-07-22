@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 RUN a2enmod rewrite
+
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
@@ -34,7 +35,6 @@ RUN echo '<Directory /var/www/html/public>\n\
 WORKDIR /var/www/html
 
 COPY . .
-
 COPY --from=node-build /app/public/build ./public/build
 
 RUN composer install --optimize-autoloader --no-dev
@@ -53,6 +53,7 @@ PORT="${PORT:-10000}"\n\
 sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf\n\
 sed -i "s/:80>/:${PORT}>/" /etc/apache2/sites-available/000-default.conf\n\
 php artisan config:clear\n\
+php artisan storage:link\n\
 php artisan migrate --force\n\
 php artisan db:seed --class=AdminSeeder --force\n\
 exec apache2-foreground' > /usr/local/bin/start-apache.sh \
