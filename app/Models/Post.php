@@ -16,6 +16,7 @@ class Post extends Model
         'group_id',
         'contenu',
         'media_path',
+        'media_public_id',
         'media_type',
         'media_name',
         'visibilite',
@@ -60,6 +61,20 @@ class Post extends Model
 
     public function getMediaUrlAttribute(): ?string
     {
+        if ($this->media_public_id) {
+            $cloudinary = app(\App\Services\CloudinaryService::class);
+
+            if ($this->media_type && str_starts_with($this->media_type, 'image/')) {
+                return $cloudinary->url($this->media_public_id, 1200, 1200);
+            }
+
+            if ($this->media_type && str_starts_with($this->media_type, 'video/')) {
+                return $cloudinary->videoUrl($this->media_public_id, 1200, 1200);
+            }
+
+            return $cloudinary->fileUrl($this->media_public_id);
+        }
+
         return $this->media_path ? asset('storage/' . $this->media_path) : null;
     }
 }

@@ -15,8 +15,10 @@ use App\Models\PostLike;
 use App\Models\SocialMessage;
 use App\Models\SocialNotification;
 use App\Models\User;
+use App\Models\CallSession;
 use Illuminate\Http\Request;
 use App\Services\ActivityLogger;
+use App\Services\CloudinaryService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
@@ -244,6 +246,189 @@ class SocialController extends Controller
         return back();
     }
 
+    public function startCall(Request $request, string $handle)
+    {
+        $request->validate([
+            'type' => ['required', 'in:audio,video'],
+        ]);
+
+        $caller = Auth::user();
+        $callee = $this->findUserByHandle($handle);
+
+        if ($caller->id === $callee->id) {
+            return back()->with('status', 'Vous ne pouvez pas vous appeler vous-même.');
+        }
+
+        $isFriend = FriendRequest::where(function ($query) use ($caller, $callee) {
+            $query->where('sender_id', $caller->id)->where('receiver_id', $callee->id);
+        })->orWhere(function ($query) use ($caller, $callee) {
+            $query->where('sender_id', $callee->id)->where('receiver_id', $caller->id);
+        })->where('status', 'accepted')->exists();
+
+        if (! $isFriend) {
+            return back()->with('status', 'Vous devez être amis pour démarrer un appel.');
+        }
+
+        $session = CallSession::create([
+            'room' => Str::uuid()->toString(),
+            'caller_id' => $caller->id,
+            'callee_id' => $callee->id,
+            'type' => $request->input('type'),
+            'status' => 'pending',
+        ]);
+
+        SocialNotification::create([
+            'user_id' => $callee->id,
+            'type' => 'incoming_call',
+            'data' => [
+                'session_id' => $session->id,
+                'caller_id' => $caller->id,
+                'caller_name' => $caller->name,
+                'caller_handle' => $caller->handle,
+                'call_type' => $session->type,
+            ],
+        ]);
+
+        ActivityLogger::log($caller, 'call.started', 'Appel ' . $session->type . ' démarré', ['callee_id' => $callee->id, 'session_id' => $session->id]);
+
+        return redirect()->route('messages.call', ['session' => $session->id]);
+    }
+
+    public function incomingCall()
+    {
+        $sessions = CallSession::where('callee_id', Auth::id())
+            ->where('status', 'pending')
+            ->latest()
+            ->get();
+
+        return view('calls.incoming', compact('sessions'));
+    }
+
+    public function showCall(CallSession $session)
+    {
+        $user = Auth::user();
+
+        if (! in_array($user->id, [$session->caller_id, $session->callee_id], true)) {
+            abort(403);
+        }
+
+        $role = $user->id === $session->caller_id ? 'caller' : 'callee';
+        $other = $role === 'caller' ? $session->callee : $session->caller;
+
+        return view('calls.show', compact('session', 'role', 'other'));
+    }
+
+    public function storeCallOffer(Request $request, CallSession $session)
+    {
+        if (Auth::id() !== $session->caller_id) {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'offer' => ['required', 'array'],
+        ]);
+
+        $session->offer = $data['offer'];
+        $session->status = 'accepted';
+        $session->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function storeCallAnswer(Request $request, CallSession $session)
+    {
+        if (Auth::id() !== $session->callee_id) {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'answer' => ['required', 'array'],
+        ]);
+
+        $session->answer = $data['answer'];
+        $session->status = 'accepted';
+        $session->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function storeCallCandidate(Request $request, CallSession $session)
+    {
+        $data = $request->validate([
+            'candidate' => ['required', 'array'],
+            'role' => ['required', 'in:caller,callee'],
+        ]);
+
+        $field = $data['role'] === 'caller' ? 'caller_candidates' : 'callee_candidates';
+        $candidates = $session->{$field} ?? [];
+        $candidates[] = $data['candidate'];
+        $session->{$field} = $candidates;
+        $session->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function callStatus(CallSession $session)
+    {
+        $user = Auth::user();
+
+        if (! in_array($user->id, [$session->caller_id, $session->callee_id], true)) {
+            abort(403);
+        }
+
+        return response()->json([
+            'id' => $session->id,
+            'status' => $session->status,
+            'type' => $session->type,
+            'room' => $session->room,
+            'offer' => $session->offer,
+            'answer' => $session->answer,
+            'caller_candidates' => $session->caller_candidates ?? [],
+            'callee_candidates' => $session->callee_candidates ?? [],
+            'caller_id' => $session->caller_id,
+            'callee_id' => $session->callee_id,
+        ]);
+    }
+
+    public function hangupCall(Request $request, CallSession $session)
+    {
+        $user = Auth::user();
+
+        if (! in_array($user->id, [$session->caller_id, $session->callee_id], true)) {
+            abort(403);
+        }
+
+        $session->status = 'ended';
+        $session->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function rejectCall(Request $request, CallSession $session)
+    {
+        $user = Auth::user();
+
+        if ($user->id !== $session->callee_id || $session->status !== 'pending') {
+            abort(403);
+        }
+
+        $session->status = 'rejected';
+        $session->save();
+
+        SocialNotification::create([
+            'user_id' => $session->caller_id,
+            'type' => 'call_rejected',
+            'data' => [
+                'session_id' => $session->id,
+                'callee_id' => $session->callee_id,
+                'callee_name' => $user->name,
+                'call_type' => $session->type,
+            ],
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
     public function sendMessage(SendMessageRequest $request, string $handle)
     {
         $data = $request->validated();
@@ -270,9 +455,18 @@ class SocialController extends Controller
         $attachmentPath = null;
         $attachmentType = null;
         $attachmentName = null;
+        $attachmentPublicId = null;
 
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
+
+            try {
+                $upload = app(CloudinaryService::class)->upload($file->getRealPath(), 'usnci/attachments');
+                $attachmentPublicId = $upload['public_id'];
+            } catch (\Throwable $exception) {
+                return back()->with('error', 'Impossible de téléverser la pièce jointe.')->withInput();
+            }
+
             $attachmentPath = $file->store('messages', 'public');
             $attachmentType = $file->getClientMimeType();
             $attachmentName = $file->getClientOriginalName();
@@ -283,6 +477,7 @@ class SocialController extends Controller
             'receiver_id' => $receiver->id,
             'body' => $request->input('body', ''),
             'attachment_path' => $attachmentPath,
+            'attachment_public_id' => $attachmentPublicId,
             'attachment_type' => $attachmentType,
             'attachment_name' => $attachmentName,
         ]);

@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'prenom', 'nom', 'matricule', 'handle', 'email', 'password', 'role', 'universite', 'filiere', 'niveau', 'avatar', 'cover_photo', 'bio', 'cv_url', 'cv_path', 'github', 'private_documents', 'private_friends', 'private_projects', 'last_seen'])]
+#[Fillable(['name', 'prenom', 'nom', 'matricule', 'handle', 'email', 'password', 'role', 'universite', 'filiere', 'niveau', 'avatar', 'avatar_public_id', 'cover_photo', 'cover_public_id', 'bio', 'cv_url', 'cv_path', 'github', 'private_documents', 'private_friends', 'private_projects', 'last_seen'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -86,6 +86,32 @@ class User extends Authenticatable
     public function activities()
     {
         return $this->hasMany(UserActivity::class, 'user_id');
+    }
+
+    public function getAvatarUrlAttribute(): string
+    {
+        if ($this->avatar_public_id) {
+            return app(\App\Services\CloudinaryService::class)->url($this->avatar_public_id, 200, 200);
+        }
+
+        if ($this->avatar) {
+            return asset('storage/' . $this->avatar);
+        }
+
+        return asset('images/default-avatar.png');
+    }
+
+    public function getCoverPhotoUrlAttribute(): string
+    {
+        if ($this->cover_public_id) {
+            return app(\App\Services\CloudinaryService::class)->url($this->cover_public_id, 1200, 400);
+        }
+
+        if ($this->cover_photo) {
+            return asset('storage/' . $this->cover_photo);
+        }
+
+        return asset('images/default-cover.png');
     }
 
     /**

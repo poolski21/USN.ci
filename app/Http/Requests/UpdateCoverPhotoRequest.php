@@ -14,7 +14,7 @@ class UpdateCoverPhotoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cover_photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'cover_photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
     }
 

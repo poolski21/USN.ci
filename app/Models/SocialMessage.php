@@ -14,6 +14,7 @@ class SocialMessage extends Model
         'receiver_id',
         'body',
         'attachment_path',
+        'attachment_public_id',
         'attachment_type',
         'attachment_name',
         'read_at',
@@ -35,6 +36,20 @@ class SocialMessage extends Model
 
     public function getAttachmentUrlAttribute(): ?string
     {
+        if ($this->attachment_public_id) {
+            $cloudinary = app(\App\Services\CloudinaryService::class);
+
+            if ($this->attachment_type && str_starts_with($this->attachment_type, 'image/')) {
+                return $cloudinary->url($this->attachment_public_id, 1200, 1200);
+            }
+
+            if ($this->attachment_type && str_starts_with($this->attachment_type, 'video/')) {
+                return $cloudinary->videoUrl($this->attachment_public_id, 1200, 1200);
+            }
+
+            return $cloudinary->fileUrl($this->attachment_public_id);
+        }
+
         return $this->attachment_path ? asset('storage/' . $this->attachment_path) : null;
     }
 }

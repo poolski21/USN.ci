@@ -16,6 +16,7 @@ use App\Models\SocialMessage;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Services\ActivityLogger;
+use App\Services\CloudinaryService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -145,22 +146,50 @@ class AuthController extends Controller
     public function updateCover(UpdateCoverPhotoRequest $request, $handle = null)
     {
         $user = Auth::user();
-        $path = $request->file('cover_photo')->store('cover_photos', 'public');
-        $user->cover_photo = $path;
-        $user->save();
+        $file = $request->file('cover_photo');
 
-        return back()->with('status', 'Photo de couverture mise à jour.');
+        $oldPublicId = $user->cover_public_id;
+
+        try {
+            $upload = app(CloudinaryService::class)->upload($file->getRealPath(), 'usnci/covers');
+
+            $user->cover_photo = $file->store('cover_photos', 'public');
+            $user->cover_public_id = $upload['public_id'];
+            $user->save();
+
+            if ($oldPublicId) {
+                app(CloudinaryService::class)->destroy($oldPublicId);
+            }
+
+            return back()->with('status', 'Photo de couverture mise à jour.');
+        } catch (\Throwable $exception) {
+            return back()->with('error', 'Impossible de mettre à jour la photo de couverture.');
+        }
     }
 
     // Update profile avatar
     public function updateAvatar(UpdateAvatarRequest $request, $handle = null)
     {
         $user = Auth::user();
-        $path = $request->file('avatar')->store('avatars', 'public');
-        $user->avatar = $path;
-        $user->save();
+        $file = $request->file('avatar');
 
-        return back()->with('status', 'Photo de profil mise à jour.');
+        $oldPublicId = $user->avatar_public_id;
+
+        try {
+            $upload = app(CloudinaryService::class)->upload($file->getRealPath(), 'usnci/avatars');
+
+            $user->avatar = $file->store('avatars', 'public');
+            $user->avatar_public_id = $upload['public_id'];
+            $user->save();
+
+            if ($oldPublicId) {
+                app(CloudinaryService::class)->destroy($oldPublicId);
+            }
+
+            return back()->with('status', 'Photo de profil mise à jour.');
+        } catch (\Throwable $exception) {
+            return back()->with('error', 'Impossible de mettre à jour la photo de profil.');
+        }
     }
 
     // Show the authenticated user's profile
