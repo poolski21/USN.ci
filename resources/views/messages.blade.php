@@ -79,12 +79,16 @@
                 <form action="{{ route('messages.call.start', ['handle' => $selected->handle ?? $selected->id]) }}" method="POST">
                   @csrf
                   <input type="hidden" name="type" value="audio">
-                  <button type="submit" class="rounded-full border border-ardoise/20 bg-white px-4 py-2 text-sm font-semibold text-ardoise hover:bg-ardoise/5 transition-colors">Appel audio</button>
+                  <button type="submit" class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-ardoise/20 bg-white text-ardoise hover:bg-ardoise/5 transition-colors" aria-label="Appel audio">
+                    <i class="ti ti-phone"></i>
+                  </button>
                 </form>
                 <form action="{{ route('messages.call.start', ['handle' => $selected->handle ?? $selected->id]) }}" method="POST">
                   @csrf
                   <input type="hidden" name="type" value="video">
-                  <button type="submit" class="rounded-full border border-ardoise/20 bg-white px-4 py-2 text-sm font-semibold text-ardoise hover:bg-ardoise/5 transition-colors">Appel vidéo</button>
+                  <button type="submit" class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-ardoise/20 bg-white text-ardoise hover:bg-ardoise/5 transition-colors" aria-label="Appel vidéo">
+                    <i class="ti ti-device-tv"></i>
+                  </button>
                 </form>
                 <a href="{{ route('messages.call.incoming') }}" class="rounded-full border border-ardoise/20 bg-white px-4 py-2 text-sm font-semibold text-ardoise hover:bg-ardoise/5 transition-colors">Appels entrants</a>
               </div>
