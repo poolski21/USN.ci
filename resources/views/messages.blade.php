@@ -105,7 +105,7 @@
                 @if($message->body)
                   <p class="text-sm leading-relaxed">{{ $message->body }}</p>
                 @endif
-                @if($message->attachment_path)
+                @if($message->attachment_url)
                   <div class="mt-3 rounded-3xl border border-ardoise/20 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/90">
                     <p class="text-xs uppercase tracking-[.18em] text-gray-400 mb-2">Fichier joint</p>
 
