@@ -1,0 +1,188 @@
+[1mdiff --git a/app/Http/Controllers/SocialController.php b/app/Http/Controllers/SocialController.php[m
+[1mindex 4562554..13085e6 100644[m
+[1m--- a/app/Http/Controllers/SocialController.php[m
+[1m+++ b/app/Http/Controllers/SocialController.php[m
+[36m@@ -509,6 +509,45 @@[m [mpublic function sendMessage(SendMessageRequest $request, string $handle)[m
+         return redirect()->route('messages.conversation', ['handle' => $receiver->handle ?? $receiver->id])->with('status', 'Message envoyé.');[m
+     }[m
+ [m
+[32m+[m[32m    public function updateMessage(Request $request, string $handle, SocialMessage $message)[m
+[32m+[m[32m    {[m
+[32m+[m[32m        $user = Auth::user();[m
+[32m+[m[32m        $other = $this->findUserByHandle($handle);[m
+[32m+[m
+[32m+[m[32m        if ($message->sender_id !== $user->id || $message->receiver_id !== $other->id) {[m
+[32m+[m[32m            abort(403);[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        $data = $request->validate([[m
+[32m+[m[32m            'body' => ['nullable', 'string'],[m
+[32m+[m[32m        ]);[m
+[32m+[m
+[32m+[m[32m        $body = trim($data['body'] ?? '');[m
+[32m+[m
+[32m+[m[32m        if ($body === '' && ! $message->attachment_path && ! $message->attachment_public_id) {[m
+[32m+[m[32m            return back()->withErrors(['body' => 'Le message ne peut pas être vide.'])->withInput();[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        $message->body = $body;[m
+[32m+[m[32m        $message->save();[m
+[32m+[m
+[32m+[m[32m        return back()->with('status', 'Message modifié.');[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public function deleteMessage(string $handle, SocialMessage $message)[m
+[32m+[m[32m    {[m
+[32m+[m[32m        $user = Auth::user();[m
+[32m+[m[32m        $other = $this->findUserByHandle($handle);[m
+[32m+[m
+[32m+[m[32m        if ($message->sender_id !== $user->id || $message->receiver_id !== $other->id) {[m
+[32m+[m[32m            abort(403);[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        $message->delete();[m
+[32m+[m
+[32m+[m[32m        return back()->with('status', 'Message supprimé.');[m
+[32m+[m[32m    }[m
+[32m+[m
+     public function storePost(StorePostRequest $request)[m
+     {[m
+         $data = $request->validated();[m
+[1mdiff --git a/resources/views/messages.blade.php b/resources/views/messages.blade.php[m
+[1mindex 08f44c1..10df53a 100644[m
+[1m--- a/resources/views/messages.blade.php[m
+[1m+++ b/resources/views/messages.blade.php[m
+[36m@@ -120,6 +120,30 @@[m [mclass="thread-item flex gap-3 items-center rounded-3xl p-3 transition-colors {{[m
+                     </div>[m
+                   </div>[m
+                 @endif[m
+[32m+[m
+[32m+[m[32m                @if($message->sender_id === auth()->id())[m
+[32m+[m[32m                  <div class="mt-3 flex items-center justify-end gap-2 text-xs">[m
+[32m+[m[32m                    <button type="button" class="message-edit-button inline-flex items-center gap-2 rounded-full border border-ardoise/20 bg-white px-3 py-2 text-ardoise transition-colors hover:border-ardoise/40 hover:bg-ardoise/5">Modifier</button>[m
+[32m+[m[32m                    <form action="{{ route('messages.message.delete', ['handle' => $selected->handle ?? $selected->id, 'message' => $message->id]) }}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer ce message ?');">[m
+[32m+[m[32m                      @csrf[m
+[32m+[m[32m                      @method('DELETE')[m
+[32m+[m[32m                      <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-2 text-red-600 transition-colors hover:bg-red-100">Supprimer</button>[m
+[32m+[m[32m                    </form>[m
+[32m+[m[32m                  </div>[m
+[32m+[m[32m                  <div class="message-edit-form hidden mt-3 rounded-3xl border border-ardoise/10 bg-[#F8F2E6] p-4 dark:bg-slate-900/90 dark:border-slate-700">[m
+[32m+[m[32m                    <form action="{{ route('messages.message.update', ['handle' => $selected->handle ?? $selected->id, 'message' => $message->id]) }}" method="POST" class="space-y-3">[m
+[32m+[m[32m                      @csrf[m
+[32m+[m[32m                      @method('PATCH')[m
+[32m+[m[32m                      <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">Modifier le message</label>[m
+[32m+[m[32m                      <textarea name="body" rows="3" class="w-full resize-none rounded-2xl border border-ardoise/10 bg-white px-4 py-3 text-sm text-ardoise focus:outline-none focus:ring-2 focus:ring-moutarde/40 dark:bg-slate-950 dark:border-slate-700 dark:text-gray-100">{{ $message->body }}</textarea>[m
+[32m+[m[32m                      <div class="flex flex-wrap items-center justify-between gap-3">[m
+[32m+[m[32m                        <button type="submit" class="inline-flex h-10 items-center justify-center rounded-full bg-ardoise px-4 text-sm font-semibold text-kraft hover:bg-ardoise-light transition-colors">Enregistrer</button>[m
+[32m+[m[32m                        <button type="button" class="message-edit-cancel-button inline-flex h-10 items-center justify-center rounded-full border border-ardoise/20 bg-white px-4 text-sm font-semibold text-ardoise hover:bg-ardoise/5 transition-colors">Annuler</button>[m
+[32m+[m[32m                      </div>[m
+[32m+[m[32m                    </form>[m
+[32m+[m[32m                  </div>[m
+[32m+[m[32m                @endif[m
+[32m+[m
+                 <p class="text-[10px] text-gray-400 mt-3 text-right">{{ $message->created_at->format('d/m/Y H:i') }}</p>[m
+               </div>[m
+             </div>[m
+[36m@@ -171,6 +195,11 @@[m [mclass="thread-item flex gap-3 items-center rounded-3xl p-3 transition-colors {{[m
+           return;[m
+         }[m
+ [m
+[32m+[m[32m        function scrollMessagesToBottom() {[m
+[32m+[m[32m          if (!messagesContainer) return;[m
+[32m+[m[32m          messagesContainer.scrollTop = messagesContainer.scrollHeight;[m
+[32m+[m[32m        }[m
+[32m+[m
+         if (form) {[m
+           form.addEventListener('submit', async function (event) {[m
+             event.preventDefault();[m
+[36m@@ -188,17 +217,21 @@[m [mclass="thread-item flex gap-3 items-center rounded-3xl p-3 transition-colors {{[m
+                 method: 'POST',[m
+                 body: formData,[m
+                 headers: {[m
+[32m+[m[32m                  'Accept': 'application/json',[m
+                   'X-Requested-With': 'XMLHttpRequest',[m
+                   'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,[m
+                 },[m
+               });[m
+ [m
+[32m+[m[32m              const contentType = response.headers.get('content-type') || '';[m
+[32m+[m[32m              const isJson = contentType.includes('application/json');[m
+[32m+[m[32m              const payload = isJson ? await response.json() : { message: await response.text() };[m
+[32m+[m
+               if (!response.ok) {[m
+[31m-                const errorData = await response.json();[m
+[31m-                throw new Error(errorData.message || 'Erreur lors de l’envoi du message.');[m
+[32m+[m[32m                throw new Error(payload.message || 'Erreur lors de l’envoi du message.');[m
+               }[m
+ [m
+[31m-              const message = await response.json();[m
+[32m+[m[32m              const message = payload;[m
+               const newMessage = document.createElement('div');[m
+               newMessage.className = 'max-w-[85%] rounded-3xl p-4 ml-auto bg-kraft-light text-ardoise';[m
+               newMessage.innerHTML = `[m
+[36m@@ -222,6 +255,7 @@[m [mclass="thread-item flex gap-3 items-center rounded-3xl p-3 transition-colors {{[m
+               `;[m
+ [m
+               messagesContainer.appendChild(newMessage);[m
+[32m+[m[32m              messagesContainer.scrollTop = messagesContainer.scrollHeight;[m
+               form.reset();[m
+               statusElement.textContent = 'Message envoyé.';[m
+               statusElement.classList.remove('hidden');[m
+[36m@@ -235,6 +269,11 @@[m [mclass="thread-item flex gap-3 items-center rounded-3xl p-3 transition-colors {{[m
+           });[m
+         }[m
+ [m
+[32m+[m[32m        function scrollMessagesToBottom() {[m
+[32m+[m[32m          if (!messagesContainer) return;[m
+[32m+[m[32m          messagesContainer.scrollTop = messagesContainer.scrollHeight;[m
+[32m+[m[32m        }[m
+[32m+[m
+         function escapeHtml(text) {[m
+           const div = document.createElement('div');[m
+           div.textContent = text;[m
+[36m@@ -326,6 +365,32 @@[m [mfunction autoResizeTextarea() {[m
+           autoResizeTextarea();[m
+         }[m
+ [m
+[32m+[m[32m        scrollMessagesToBottom();[m
+[32m+[m
+[32m+[m[32m        function setupEditButtons() {[m
+[32m+[m[32m          document.querySelectorAll('.message-edit-button').forEach(function (button) {[m
+[32m+[m[32m            button.addEventListener('click', function () {[m
+[32m+[m[32m              const bubble = button.closest('div[class*="max-w-"]');[m
+[32m+[m[32m              if (!bubble) return;[m
+[32m+[m[32m              const editForm = bubble.querySelector('.message-edit-form');[m
+[32m+[m[32m              if (!editForm) return;[m
+[32m+[m[32m              editForm.classList.toggle('hidden');[m
+[32m+[m[32m            });[m
+[32m+[m[32m          });[m
+[32m+[m
+[32m+[m[32m          document.querySelectorAll('.message-edit-cancel-button').forEach(function (button) {[m
+[32m+[m[32m            button.addEventListener('click', function () {[m
+[32m+[m[32m              const bubble = button.closest('div[class*="max-w-"]');[m
+[32m+[m[32m              if (!bubble) return;[m
+[32m+[m[32m              const editForm = bubble.querySelector('.message-edit-form');[m
+[32m+[m[32m              if (!editForm) return;[m
+[32m+[m[32m              editForm.classList.add('hidden');[m
+[32m+[m[32m            });[m
+[32m+[m[32m          });[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        setupEditButtons();[m
+[32m+[m
+         @if($selected)[m
+           (async function () {[m
+             try {[m
+[1mdiff --git a/routes/web.php b/routes/web.php[m
+[1mindex 041b860..512f487 100644[m
+[1m--- a/routes/web.php[m
+[1m+++ b/routes/web.php[m
+[36m@@ -34,6 +34,8 @@[m
+     Route::get('/messages/{handle}', [SocialController::class, 'conversation'])->name('messages.conversation');[m
+     Route::post('/messages/{handle}/read', [SocialController::class, 'markMessagesRead'])->name('messages.read');[m
+     Route::post('/messages/{handle}', [SocialController::class, 'sendMessage'])->name('messages.send');[m
+[32m+[m[32m    Route::patch('/messages/{handle}/message/{message}', [SocialController::class, 'updateMessage'])->name('messages.message.update');[m
+[32m+[m[32m    Route::delete('/messages/{handle}/message/{message}', [SocialController::class, 'deleteMessage'])->name('messages.message.delete');[m
+     Route::post('/messages/{handle}/call', [SocialController::class, 'startCall'])->name('messages.call.start');[m
+     Route::get('/messages/call/incoming', [SocialController::class, 'incomingCall'])->name('messages.call.incoming');[m
+     Route::get('/messages/call/{session}', [SocialController::class, 'showCall'])->name('messages.call');[m

@@ -108,6 +108,23 @@
                 @if($message->attachment_path)
                   <div class="mt-3 rounded-3xl border border-ardoise/20 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/90">
                     <p class="text-xs uppercase tracking-[.18em] text-gray-400 mb-2">Fichier joint</p>
+
+                    @if(str_starts_with($message->attachment_type ?? '', 'audio/'))
+                      <div class="mb-3">
+                        <audio controls class="w-full rounded-3xl border border-ardoise/10 bg-[#F8F2E6] p-2">
+                          <source src="{{ $message->attachment_url }}" type="{{ $message->attachment_type }}">
+                          Votre navigateur ne prend pas en charge la lecture audio.
+                        </audio>
+                      </div>
+                    @elseif(str_starts_with($message->attachment_type ?? '', 'video/'))
+                      <div class="mb-3">
+                        <video controls class="w-full rounded-3xl border border-ardoise/10 bg-black/5">
+                          <source src="{{ $message->attachment_url }}" type="{{ $message->attachment_type }}">
+                          Votre navigateur ne prend pas en charge la lecture vidéo.
+                        </video>
+                      </div>
+                    @endif
+
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div class="space-y-1">
                         <p class="text-sm font-medium text-ardoise">{{ $message->attachment_name }}</p>
