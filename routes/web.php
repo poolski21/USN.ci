@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\CertificationController;
 use App\Http\Controllers\Evenement\EvenementController;
 use App\Http\Controllers\SocialController;
 
@@ -74,10 +75,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/evenements/{evenement}/comment', [EvenementController::class, 'comment'])->name('evenements.comment');
     Route::post('/evenements/{evenement}/share', [EvenementController::class, 'share'])->name('evenements.share');
     Route::get('/profil/{handle?}', [AuthController::class, 'showProfil'])->name('profil.show');
+    Route::get('/certification', [CertificationController::class, 'create'])->name('certification.request');
+    Route::post('/certification', [CertificationController::class, 'store'])->name('certification.store');
+    Route::get('/certification/payment/{checkoutId}', [CertificationController::class, 'paymentCallback'])->name('certification.payment.callback');
 
     Route::middleware('can:access-admin')->group(function () {
         Route::get('/admin', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         Route::get('/developpeur/dashboard/stats', [AdminController::class, 'stats'])->name('admin.dashboard.stats');
+        Route::get('/admin/certifications', [CertificationController::class, 'showAdminCertifications'])->name('admin.certifications');
+        Route::post('/admin/certifications/{certificationRequest}/approve', [CertificationController::class, 'approve'])->name('admin.certifications.approve');
+        Route::post('/admin/certifications/{certificationRequest}/reject', [CertificationController::class, 'reject'])->name('admin.certifications.reject');
     });
 });
 

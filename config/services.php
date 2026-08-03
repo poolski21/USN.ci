@@ -39,4 +39,10 @@ return [
         ],
     ],
 
+    'payment' => [
+        'provider' => env('PAYMENT_PROVIDER', 'mock'),
+        'public_key' => env('PAYMENT_PUBLIC_KEY', ''),
+        'secret_key' => env('PAYMENT_SECRET_KEY', ''),
+    ],
+
 ];

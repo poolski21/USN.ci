@@ -248,7 +248,11 @@
     {{-- Badge vérifié --}}
     <div class="absolute top-3 right-3 flex items-center gap-1.5 bg-white/10 border border-white/20 text-kraft text-xs px-3 py-1 rounded-lg backdrop-blur-sm">
       <i class="ti ti-shield-check text-moutarde"></i>
-      Compte vérifié · {{ $user->universite ?? 'UIST' }}
+      @if($user->is_certified)
+        Compte certifié · {{ $user->certified_university ?? $user->universite ?? 'UIST' }}
+      @else
+        Compte standard · {{ $user->universite ?? 'UIST' }}
+      @endif
     </div>
     {{-- Bouton modifier cover (visible si c'est le propre profil) --}}
     @if(auth()->id() === $user->id)
@@ -315,6 +319,9 @@
             <a href="{{ route('profil.edit') }}"
                class="btn-primary">
               <i class="ti ti-edit"></i> Modifier le profil
+            </a>
+            <a href="{{ route('certification.request') }}" class="btn-secondary">
+              <i class="ti ti-certificate"></i> Demander un compte certifié
             </a>
             <button class="btn-secondary">
               <i class="ti ti-share"></i> Partager
