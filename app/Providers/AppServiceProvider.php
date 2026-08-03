@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Schema;
@@ -30,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
     {
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
+        }
+
+        if ($this->app->environment('production') && config('services.flutterwave.env') === 'test') {
+            Log::warning('Configuration Flutterwave incohérente : APP_ENV=production mais FLUTTERWAVE_ENV=test. Vérifie les clés live avant le déploiement.');
         }
 
         $gate->define('access-admin', function ($user) {

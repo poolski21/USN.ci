@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'prenom', 'nom', 'matricule', 'handle', 'email', 'password', 'role', 'universite', 'filiere', 'niveau', 'avatar', 'avatar_public_id', 'cover_photo', 'cover_public_id', 'bio', 'cv_url', 'cv_path', 'github', 'private_documents', 'private_friends', 'private_projects', 'last_seen', 'is_certified', 'certification_status', 'certified_university', 'certification_package'])]
+#[Fillable(['name', 'prenom', 'nom', 'matricule', 'handle', 'email', 'password', 'role', 'universite', 'filiere', 'niveau', 'avatar', 'avatar_public_id', 'cover_photo', 'cover_public_id', 'bio', 'cv_url', 'cv_path', 'github', 'private_documents', 'private_friends', 'private_projects', 'last_seen', 'is_certified', 'certification_status', 'certified_university', 'certification_package', 'certified_via', 'certified_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -52,22 +52,24 @@ class User extends Authenticatable
     public function friends()
     {
         // Optimize friends query with UNION to avoid N+1 queries
-        $sentFriendsQuery = FriendRequest::where('sender_id', $this->id)
+        $sentFriendsQuery = FriendRequest::query()
+            ->where('sender_id', $this->id)
             ->where('status', 'accepted')
             ->select('receiver_id as user_id');
 
-        $receivedFriendsIds = FriendRequest::where('receiver_id', $this->id)
+        $receivedFriendsIds = FriendRequest::query()
+            ->where('receiver_id', $this->id)
             ->where('status', 'accepted')
             ->select('sender_id as user_id')
             ->union($sentFriendsQuery)
             ->pluck('user_id');
 
-        return self::whereIn('id', $receivedFriendsIds);
+        return self::query()->whereIn('id', $receivedFriendsIds);
     }
 
     public static function findByHandleOrId(string $value)
     {
-        return self::where('handle', $value)
+        return self::query()->where('handle', $value)
             ->when(is_numeric($value), fn ($query) => $query->orWhere('id', $value))
             ->firstOrFail();
     }
@@ -138,6 +140,7 @@ class User extends Authenticatable
             'private_projects' => 'boolean',
             'is_certified' => 'boolean',
             'last_seen' => 'datetime',
+            'certified_at' => 'datetime',
         ];
     }
 }

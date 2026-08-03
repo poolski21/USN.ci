@@ -20,6 +20,10 @@ Route::post('/connexion', [AuthController::class, 'connexion'])->middleware('thr
 Route::get('/inscription',[AuthController::class, 'showInscription'])->name('inscription');
 Route::post('/inscription',[AuthController::class, 'inscription'])->middleware('throttle:3,1')->name('inscription.store');
 Route::get('/search', [AuthController::class, 'searchFriends'])->name('search');
+Route::post('/webhooks/kadevpay', [CertificationController::class, 'webhook'])
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->name('webhooks.kadevpay');
+Route::get('/certification/callback', [CertificationController::class, 'callback'])->name('certification.callback');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profil/editer/{handle?}', [AuthController::class, 'showEditProfil'])->name('profil.edit');
@@ -75,9 +79,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/evenements/{evenement}/comment', [EvenementController::class, 'comment'])->name('evenements.comment');
     Route::post('/evenements/{evenement}/share', [EvenementController::class, 'share'])->name('evenements.share');
     Route::get('/profil/{handle?}', [AuthController::class, 'showProfil'])->name('profil.show');
-    Route::get('/certification', [CertificationController::class, 'create'])->name('certification.request');
+    Route::get('/certification', [CertificationController::class, 'show'])->name('certification.request');
     Route::post('/certification', [CertificationController::class, 'store'])->name('certification.store');
-    Route::get('/certification/payment/{checkoutId}', [CertificationController::class, 'paymentCallback'])->name('certification.payment.callback');
+    Route::get('/certification/{certificationRequest}/payment', [CertificationController::class, 'payment'])->name('certification.payment');
 
     Route::middleware('can:access-admin')->group(function () {
         Route::get('/admin', [AdminController::class, 'dashboard'])->name('admin.dashboard');

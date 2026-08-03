@@ -23,6 +23,11 @@
         {{ session('status') }}
       </div>
     @endif
+    @if(session('error') || request('error'))
+      <div class="mt-6 rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+        {{ session('error') ?? __('Une erreur est survenue pendant le paiement.') }}
+      </div>
+    @endif
 
     <form action="{{ route('certification.store') }}" method="POST" class="mt-8 space-y-5">
       @csrf

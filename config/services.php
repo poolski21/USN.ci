@@ -45,4 +45,10 @@ return [
         'secret_key' => env('PAYMENT_SECRET_KEY', ''),
     ],
 
+    'kadevpay' => [
+        'public_key' => env('KADEVPAY_PUBLIC_KEY', ''),
+        'secret_key' => env('KADEVPAY_SECRET_KEY', ''),
+        'webhook_secret' => env('KADEVPAY_WEBHOOK_SECRET', ''),
+    ],
+
 ];

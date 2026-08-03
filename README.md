@@ -55,4 +55,20 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 
 ## License
 
+## Configuration Flutterwave
+
+Cette application utilise `config('services.flutterwave')` et les variables d'environnement suivantes :
+
+- `FLUTTERWAVE_PUBLIC_KEY`
+- `FLUTTERWAVE_SECRET_KEY`
+- `FLUTTERWAVE_SECRET_HASH`
+- `FLUTTERWAVE_ENV` (valeurs possibles : `test`, `live`)
+
+En local et en staging, maintenez `FLUTTERWAVE_ENV=test` et utilisez les clés de test fournies par le dashboard Flutterwave.
+En production, définissez `FLUTTERWAVE_ENV=live` et configurez les clés `FLWSECK-...` et `FLWPUBK-...` fournies après la validation KYC par Flutterwave.
+
+Ne jamais inclure de clés privées ou réelles dans `.env.example` ou dans le contrôle de version. Les clés live ne sont délivrées qu'après validation KYC dans le dashboard Flutterwave.
+
+Si `APP_ENV=production` et `FLUTTERWAVE_ENV=test`, l'application journalisera un avertissement pour indiquer une configuration dangereuse.
+
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
