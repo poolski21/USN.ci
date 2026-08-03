@@ -13,11 +13,12 @@ Route::get('/', function () {
 
 Route::get('/connexion', [AuthController::class, 'showConnexion'])->name('connexion');
 Route::get('/login', [AuthController::class, 'showConnexion'])->name('login');
-Route::post('/connexion', [AuthController::class, 'connexion'])->name('connexion.store');
+Route::post('/connexion', [AuthController::class, 'connexion'])->middleware('throttle:5,1')->name('connexion.store');
 
 
 Route::get('/inscription',[AuthController::class, 'showInscription'])->name('inscription');
-Route::post('/inscription',[AuthController::class, 'inscription'])->name('inscription.store');
+Route::post('/inscription',[AuthController::class, 'inscription'])->middleware('throttle:3,1')->name('inscription.store');
+Route::get('/search', [AuthController::class, 'searchFriends'])->name('search');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profil/editer/{handle?}', [AuthController::class, 'showEditProfil'])->name('profil.edit');
@@ -33,7 +34,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/messages', [SocialController::class, 'messages'])->name('messages');
     Route::get('/messages/{handle}', [SocialController::class, 'conversation'])->name('messages.conversation');
     Route::post('/messages/{handle}/read', [SocialController::class, 'markMessagesRead'])->name('messages.read');
-    Route::post('/messages/{handle}', [SocialController::class, 'sendMessage'])->name('messages.send');
+    Route::post('/messages/{handle}', [SocialController::class, 'sendMessage'])->middleware('throttle:20,1')->name('messages.send');
     Route::patch('/messages/{handle}/message/{message}', [SocialController::class, 'updateMessage'])->name('messages.message.update');
     Route::delete('/messages/{handle}/message/{message}', [SocialController::class, 'deleteMessage'])->name('messages.message.delete');
     Route::post('/messages/{handle}/call', [SocialController::class, 'startCall'])->name('messages.call.start');
@@ -48,7 +49,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [SocialController::class, 'notifications'])->name('notifications');
     Route::post('/notifications/{id}/lu', [SocialController::class, 'markNotificationRead'])->name('notifications.read');
     Route::get('/live-updates', [SocialController::class, 'liveUpdates'])->name('live.updates');
-    Route::get('/search', [AuthController::class, 'searchFriends'])->name('search');
     Route::post('/deconnexion', [AuthController::class, 'logout'])->name('logout');
     Route::get('/documents', fn() => view('documents'))->name('documents');
     Route::get('/groupes/nouveau', [SocialController::class, 'showCreateGroup'])->name('groupes.create');
@@ -58,13 +58,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/groupes/{slug}/quitter', [SocialController::class, 'leaveGroup'])->name('groupes.leave');
     Route::post('/groupes/{slug}/membres', [SocialController::class, 'addGroupMember'])->name('groupes.members.add');
     Route::delete('/groupes/{slug}/membres/{userId}', [SocialController::class, 'removeGroupMember'])->name('groupes.members.remove');
-    Route::post('/groupes/{slug}/messages', [SocialController::class, 'sendGroupMessage'])->name('groupes.messages.send');
+    Route::post('/groupes/{slug}/messages', [SocialController::class, 'sendGroupMessage'])->middleware('throttle:20,1')->name('groupes.messages.send');
     Route::delete('/groupes/{slug}/messages/{messageId}', [SocialController::class, 'deleteGroupMessage'])->name('groupes.messages.delete');
-    Route::post('/posts', [SocialController::class, 'storePost'])->name('posts.store');
+    Route::post('/posts', [SocialController::class, 'storePost'])->middleware('throttle:10,1')->name('posts.store');
     Route::post('/posts/{id}/edit', [SocialController::class, 'editPost'])->name('posts.edit');
     Route::delete('/posts/{id}', [SocialController::class, 'destroyPost'])->name('posts.destroy');
-    Route::post('/posts/{id}/like', [SocialController::class, 'likePost'])->name('posts.like');
-    Route::post('/posts/{id}/comment', [SocialController::class, 'commentPost'])->name('posts.comment');
+    Route::post('/posts/{id}/like', [SocialController::class, 'likePost'])->middleware('throttle:30,1')->name('posts.like');
+    Route::post('/posts/{id}/comment', [SocialController::class, 'commentPost'])->middleware('throttle:20,1')->name('posts.comment');
     Route::post('/posts/{id}/share', [SocialController::class, 'sharePost'])->name('posts.share');
     Route::get('/evenements', [EvenementController::class, 'index'])->name('evenements.index');
     Route::get('/evenements/creer', [EvenementController::class, 'create'])->name('evenements.create');
@@ -75,7 +75,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/evenements/{evenement}/share', [EvenementController::class, 'share'])->name('evenements.share');
     Route::get('/profil/{handle?}', [AuthController::class, 'showProfil'])->name('profil.show');
 
-    Route::get('/admin', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-    Route::get('/developpeur/dashboard/stats', [AdminController::class, 'stats'])->name('admin.dashboard.stats');
+    Route::middleware('can:access-admin')->group(function () {
+        Route::get('/admin', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+        Route::get('/developpeur/dashboard/stats', [AdminController::class, 'stats'])->name('admin.dashboard.stats');
+    });
 });
 

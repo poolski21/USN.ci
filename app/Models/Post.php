@@ -30,11 +30,6 @@ class Post extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function auteur()
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-
     public function groupe()
     {
         return $this->belongsTo(Group::class, 'group_id');

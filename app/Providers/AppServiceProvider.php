@@ -4,9 +4,11 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Contracts\Auth\Access\Gate;
 use App\Models\SocialMessage;
 use App\Models\SocialNotification;
 use Carbon\Carbon;
@@ -24,11 +26,15 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
+    public function boot(Gate $gate): void
     {
         if ($this->app->environment('production')) {
-    URL::forceScheme('https');
-}
+            URL::forceScheme('https');
+        }
+
+        $gate->define('access-admin', function ($user) {
+            return $user && is_object($user) && ($user->role ?? null) === 'admin';
+        });
         Schema::defaultStringLength(191);
 
         Carbon::setLocale(config('app.locale'));
@@ -40,12 +46,24 @@ class AppServiceProvider extends ServiceProvider
 
             if (Auth::check()) {
                 $userId = Auth::id();
-                $unreadMessages = SocialMessage::where('receiver_id', $userId)
-                    ->whereNull('read_at')
-                    ->count();
-                $unreadNotifications = SocialNotification::where('user_id', $userId)
-                    ->whereNull('read_at')
-                    ->count();
+                
+                // Cache unread counts for 5 minutes
+                $cacheKey = "user.{$userId}.notifications";
+                $cached = Cache::get($cacheKey);
+                
+                if ($cached === null) {
+                    $unreadMessages = SocialMessage::where('receiver_id', $userId)
+                        ->whereNull('read_at')
+                        ->count();
+                    $unreadNotifications = SocialNotification::where('user_id', $userId)
+                        ->whereNull('read_at')
+                        ->count();
+                    
+                    Cache::put($cacheKey, compact('unreadMessages', 'unreadNotifications'), now()->addMinutes(5));
+                } else {
+                    $unreadMessages = $cached['unreadMessages'];
+                    $unreadNotifications = $cached['unreadNotifications'];
+                }
             }
 
             $view->with(compact('unreadMessages', 'unreadNotifications'));

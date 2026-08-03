@@ -59,13 +59,15 @@
   *:focus-visible{ outline: 3px solid #E2A33B; outline-offset: 2px; border-radius: 2px; }
   @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } html{ scroll-behavior:auto; } }
   .field{
-    width:100%; border-radius:.5rem; border:1.5px solid rgba(34,30,24,0.16);
-    background: rgba(255,255,255,0.55); padding:.7rem 1rem; font-family:'Source Serif 4',serif;
-    font-size:.95rem; outline:none; transition: border-color .15s ease, box-shadow .15s ease;
+    width:100%; border-radius:9999px; border:1.5px solid rgba(34,30,24,0.16);
+    background: rgba(255,255,255,0.78); padding:.8rem 1rem; font-family:'Space Grotesk',sans-serif;
+    font-size:.95rem; outline:none; transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
   }
-  .field::placeholder{ color: rgba(34,30,24,0.4); }
-  .field:focus{ border-color:#E2A33B; box-shadow: 0 0 0 3px rgba(226,163,59,0.25); background: rgba(255,255,255,0.85); }
+  .field::placeholder{ color: rgba(34,30,24,0.42); }
+  .field:focus{ border-color:#E2A33B; box-shadow: 0 0 0 3px rgba(226,163,59,0.2); background: rgba(255,255,255,0.95); }
   select.field{ appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23221E18' stroke-opacity='0.5' stroke-width='1.6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 1rem center; padding-right:2.4rem; }
+  .form-card{ background: rgba(255,255,255,0.95); border: 1px solid rgba(34,30,24,0.08); border-radius: 1.75rem; box-shadow: 0 30px 80px -40px rgba(31,46,38,0.55); }
+  .hero-card{ background: linear-gradient(135deg, rgba(248,242,230,0.95), rgba(239,230,211,0.85)); border: 1px solid rgba(255,255,255,0.16); border-radius: 1.25rem; box-shadow: 0 24px 50px -30px rgba(31,46,38,0.45); }
 </style>
 <!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -75,7 +77,7 @@
 
 <a href="#contenu" class="skip-link absolute -left-[999px] top-0 bg-moutarde text-ardoise font-display px-4 py-2 z-50">Aller au contenu principal</a>
 
-<header class="sticky top-0 z-40 bg-ardoise text-kraft border-b border-black/20">
+<header class="sticky top-0 z-40 border-b border-black/20 bg-ardoise/95 text-kraft shadow-[0_12px_40px_rgba(31,46,38,0.16)] backdrop-blur">
   <div class="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
   <a href="{{ url('/') }}" class="flex items-center gap-2.5 font-display font-semibold text-lg shrink-0">
       <span class="grid place-items-center w-9 h-9 rounded-full bg-moutarde text-ardoise font-display font-bold text-base ring-2 ring-kraft/30">USN</span>
@@ -100,7 +102,7 @@
     </div>
 
     <div class="relative w-72 self-center my-8 space-y-6">
-      <div class="note-card relative bg-sauge text-kraft-light rounded-sm rotate-3 p-5">
+      <div class="hero-card note-card relative bg-sauge text-kraft-light rotate-3 p-5">
         <span class="pin"></span>
         <p class="font-display text-[11px] uppercase tracking-wide text-kraft/70 font-semibold mb-1">🎭 Club étudiant</p>
         <p class="font-display font-semibold text-sm">Le club théâtre recrute</p>
@@ -118,7 +120,7 @@
 
   <!-- PANNEAU DROIT : formulaire -->
   <section class="bg-kraft-light paper-grid flex-1 flex items-center justify-center px-5 sm:px-8 py-14">
-    <div class="w-full max-w-2xl rounded-[1.5rem] border border-black/10 bg-white/95 p-8 shadow-[0_22px_60px_-40px_rgba(34,30,24,0.55)]">
+    <div class="form-card w-full max-w-2xl p-8 sm:p-10">
 
       <p class="font-display text-xs uppercase tracking-[0.2em] text-encre mb-3">Inscription</p>
       <h2 class="font-display font-semibold text-3xl mb-2">Crée ton compte</h2>
@@ -227,7 +229,7 @@
           </div>
           @error('conditions')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
 
-          <button type="submit" class="stamp-btn w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-md bg-moutarde text-ardoise font-display font-semibold shadow-lg">
+          <button type="submit" class="stamp-btn w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-moutarde text-ardoise font-display font-semibold shadow-[0_16px_35px_-20px_rgba(226,163,59,0.7)]">
             Créer mon compte
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
           </button>

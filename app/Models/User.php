@@ -50,15 +50,18 @@ class User extends Authenticatable
 
     public function friends()
     {
-        $sent = FriendRequest::where('sender_id', $this->id)
+        // Optimize friends query with UNION to avoid N+1 queries
+        $sentFriendsQuery = FriendRequest::where('sender_id', $this->id)
             ->where('status', 'accepted')
-            ->pluck('receiver_id');
+            ->select('receiver_id as user_id');
 
-        $received = FriendRequest::where('receiver_id', $this->id)
+        $receivedFriendsIds = FriendRequest::where('receiver_id', $this->id)
             ->where('status', 'accepted')
-            ->pluck('sender_id');
+            ->select('sender_id as user_id')
+            ->union($sentFriendsQuery)
+            ->pluck('user_id');
 
-        return self::whereIn('id', $sent->merge($received));
+        return self::whereIn('id', $receivedFriendsIds);
     }
 
     public static function findByHandleOrId(string $value)

@@ -15,7 +15,7 @@ class UpdateProfileRequest extends FormRequest
     {
         return [
             'bio' => ['nullable', 'string', 'max:2000'],
-            'github' => ['nullable', 'url', 'max:255'],
+            'github' => ['nullable', 'url', 'max:255', 'regex:/^https:\/\/github\.com\//i'],
             'cv_url' => ['nullable', 'url', 'max:255'],
             'filiere' => ['nullable', 'string', 'max:255'],
             'niveau' => ['nullable', 'string', 'max:255'],

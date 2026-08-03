@@ -47,6 +47,10 @@ class SocialMessage extends Model
                 return $cloudinary->videoUrl($this->attachment_public_id, 1200, 1200);
             }
 
+            if ($this->attachment_type && str_starts_with($this->attachment_type, 'audio/')) {
+                return $cloudinary->videoUrl($this->attachment_public_id, 1200, 1200);
+            }
+
             return $cloudinary->fileUrl($this->attachment_public_id);
         }
 

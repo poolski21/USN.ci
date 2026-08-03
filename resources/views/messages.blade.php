@@ -20,8 +20,8 @@
              data-search="{{ strtolower($thread['friend']->prenom . ' ' . $thread['friend']->nom . ' ' . ($thread['last']->body ?? '')) }}"
              class="thread-item flex gap-3 items-center rounded-3xl p-3 transition-colors {{ optional($selected)->id === $thread['friend']->id ? 'bg-kraft-light border border-ardoise/20 shadow-sm dark:bg-slate-900/80 dark:border-slate-700' : 'hover:bg-kraft-light hover:border hover:border-ardoise/10 dark:hover:bg-slate-900/80' }}" aria-label="Conversation avec {{ $thread['friend']->prenom }} {{ $thread['friend']->nom }}">
             <div class="flex-shrink-0 h-14 w-14 rounded-full bg-sauge/10 text-sauge grid place-items-center text-lg font-semibold text-ardoise">
-              @if($thread['friend']->avatar)
-                <img src="{{ asset('storage/'.$thread['friend']->avatar) }}" alt="{{ $thread['friend']->prenom }}" class="h-full w-full rounded-full object-cover" />
+              @if($thread['friend']->avatar_url)
+                <img src="{{ $thread['friend']->avatar_url }}" alt="{{ $thread['friend']->prenom }}" class="h-full w-full rounded-full object-cover" />
               @else
                 {{ strtoupper(substr($thread['friend']->prenom,0,1).substr($thread['friend']->nom,0,1)) }}
               @endif
@@ -53,8 +53,8 @@
           <div class="flex items-center gap-3">
             @if($selected)
               <div class="flex-shrink-0 h-14 w-14 rounded-full bg-sauge/10 text-sauge grid place-items-center text-lg font-semibold text-ardoise overflow-hidden">
-                @if($selected->avatar)
-                  <img src="{{ asset('storage/'.$selected->avatar) }}" alt="{{ $selected->prenom }}" class="h-full w-full object-cover" />
+                @if($selected->avatar_url)
+                  <img src="{{ $selected->avatar_url }}" alt="{{ $selected->prenom }}" class="h-full w-full object-cover" />
                 @else
                   {{ strtoupper(substr($selected->prenom,0,1).substr($selected->nom,0,1)) }}
                 @endif
@@ -224,6 +224,14 @@
             event.preventDefault();
 
             const formData = new FormData(form);
+            const attachmentInput = document.getElementById('message-attachment');
+
+            if (attachedVoiceFile) {
+              formData.set('attachment', attachedVoiceFile);
+            } else if (attachmentInput && attachmentInput.files.length > 0) {
+              formData.set('attachment', attachmentInput.files[0]);
+            }
+
             const action = form.getAttribute('action');
 
             sendButton.disabled = true;
@@ -276,6 +284,9 @@
               messagesContainer.appendChild(newMessage);
               messagesContainer.scrollTop = messagesContainer.scrollHeight;
               form.reset();
+              attachedVoiceFile = null;
+              voicePreview.classList.add('hidden');
+              voicePreview.innerHTML = '';
               statusElement.textContent = 'Message envoyé.';
               statusElement.classList.remove('hidden');
             } catch (error) {
@@ -303,6 +314,11 @@
         const voicePreview = document.getElementById('voice-preview');
         let mediaRecorder;
         let audioChunks = [];
+        let attachedVoiceFile = null;
+
+        if (form) {
+          const originalFormSubmit = form.addEventListener;
+        }
 
         if (voiceButton) {
           voiceButton.addEventListener('click', async function () {
@@ -342,6 +358,7 @@
                     const dataTransfer = new DataTransfer();
                     dataTransfer.items.add(file);
                     document.getElementById('message-attachment').files = dataTransfer.files;
+                    attachedVoiceFile = file;
                     voicePreview.innerHTML = '<p class="text-sm text-ardoise">Fichier vocal prêt à être envoyé.</p>';
                   });
                 });

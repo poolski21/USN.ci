@@ -66,6 +66,13 @@
     position: relative;
     overflow: hidden;
   }
+  .panel-card { background: rgba(255,255,255,.96); border: 1px solid #D4CABC; border-radius: 1.5rem; box-shadow: 0 20px 60px rgba(31,46,38,.08); }
+  .soft-card { background: rgba(248,242,230,.86); border: 1px solid #D4CABC; border-radius: 1.25rem; box-shadow: inset 0 1px 0 rgba(255,255,255,.45); }
+  .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; padding: .7rem 1rem; border-radius: 9999px; background: #E2A33B; color: #1F2E26; font-weight: 700; box-shadow: 0 12px 24px rgba(226,163,59,.18); transition: transform .15s ease, box-shadow .15s ease, background .15s ease; }
+  .btn-primary:hover { background: #C98826; transform: translateY(-1px); box-shadow: 0 14px 28px rgba(226,163,59,.22); }
+  .btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; padding: .7rem 1rem; border-radius: 9999px; border: 1px solid rgba(31,46,38,.16); background: #FFF; color: #1F2E26; transition: background .15s ease, color .15s ease, transform .15s ease, box-shadow .15s ease; }
+  .btn-secondary:hover { background: #F8F2E6; transform: translateY(-1px); box-shadow: 0 10px 22px rgba(31,46,38,.08); }
+  .chip-pill { display: inline-flex; align-items: center; gap: .4rem; border-radius: 9999px; background: rgba(226,163,59,.12); color: #A45F16; border: 1px solid rgba(226,163,59,.2); padding: .35rem .65rem; font-size: .75rem; font-weight: 600; }
   .cover-zone img.cover-img {
     width: 100%; height: 100%; object-fit: cover; opacity: .85;
   }
@@ -233,10 +240,10 @@
   {{-- ══════════════════════════════════════
        COVER PHOTO
   ══════════════════════════════════════ --}}
-  <div class="cover-zone rounded-b-xl">
+  <div class="cover-zone rounded-b-[1.5rem]">
     <div class="cover-pattern"></div>
     @if($user->cover_photo)
-      <img src="{{ asset('storage/'.$user->cover_photo) }}" alt="Photo de couverture" class="cover-img">
+      <img src="{{ $user->cover_photo_url }}" alt="Photo de couverture" class="cover-img">
     @endif
     {{-- Badge vérifié --}}
     <div class="absolute top-3 right-3 flex items-center gap-1.5 bg-white/10 border border-white/20 text-kraft text-xs px-3 py-1 rounded-lg backdrop-blur-sm">
@@ -258,14 +265,14 @@
   {{-- ══════════════════════════════════════
        BLOC IDENTITÉ
   ══════════════════════════════════════ --}}
-  <div class="bg-kraft-light border border-kraft-dark/40 border-t-0 rounded-b-xl px-5 pb-4">
+  <div class="panel-card rounded-b-[1.5rem] border-[#D4CABC] bg-white/92 px-5 pb-4">
 
     <div class="flex flex-wrap items-end gap-4 pt-0">
 
       {{-- Avatar --}}
       <div class="avatar-ring relative">
-        @if($user->avatar || $user->cover_photo)
-          <img src="{{ asset('storage/'.($user->avatar ?? $user->cover_photo)) }}" alt="Avatar de {{ $user->prenom }}">
+        @if($user->avatar_url)
+          <img src="{{ $user->avatar_url }}" alt="Avatar de {{ $user->prenom }}">
         @else
           {{ strtoupper(substr($user->prenom,0,1).substr($user->nom,0,1)) }}
         @endif
@@ -306,15 +313,15 @@
         <div class="friend-action-wrapper flex flex-wrap items-center gap-2">
           @if(auth()->id() === $user->id)
             <a href="{{ route('profil.edit') }}"
-               class="flex items-center gap-1.5 px-4 py-2 bg-ardoise text-kraft text-sm font-medium rounded-lg hover:bg-ardoise-light transition-colors">
+               class="btn-primary">
               <i class="ti ti-edit"></i> Modifier le profil
             </a>
-            <button class="flex items-center gap-1.5 px-3 py-2 border border-ardoise/40 text-ardoise text-sm rounded-lg hover:bg-ardoise/5 transition-colors">
+            <button class="btn-secondary">
               <i class="ti ti-share"></i> Partager
             </button>
           @else
             @if($isFriend)
-              <a href="{{ route('messages.conversation', $user->handle ?? $user->id) }}" class="flex items-center gap-1.5 px-4 py-2 bg-ardoise text-kraft text-sm font-medium rounded-lg hover:bg-ardoise-light transition-colors">
+              <a href="{{ route('messages.conversation', $user->handle ?? $user->id) }}" class="btn-primary">
                 <i class="ti ti-mail"></i> Envoyer un message
               </a>
               <div class="flex items-center gap-1.5 rounded-lg border border-ardoise/20 bg-white/70 px-3 py-2 text-sm text-sauge">
@@ -328,13 +335,13 @@
               <div class="friend-action-wrapper flex gap-2">
                 <form class="friend-action-form" action="{{ route('friend.requests.accept', $friendRequest->id) }}" method="POST">
                   @csrf
-                  <button type="submit" data-success-text="Acceptée" class="flex items-center gap-1.5 px-4 py-2 bg-ardoise text-kraft text-sm font-medium rounded-lg hover:bg-ardoise-light transition-colors">
+                  <button type="submit" data-success-text="Acceptée" class="btn-primary">
                     <i class="ti ti-check"></i> Accepter
                   </button>
                 </form>
                 <form class="friend-action-form" action="{{ route('friend.requests.decline', $friendRequest->id) }}" method="POST">
                   @csrf
-                  <button type="submit" data-success-text="Refusée" class="flex items-center gap-1.5 px-4 py-2 border border-ardoise/40 text-ardoise text-sm rounded-lg hover:bg-ardoise/5 transition-colors">
+                  <button type="submit" data-success-text="Refusée" class="btn-secondary">
                     <i class="ti ti-x"></i> Refuser
                   </button>
                 </form>
@@ -342,7 +349,7 @@
             @else
               <form class="friend-action-form" action="{{ route('friend.requests.send', $user->handle ?? $user->id) }}" method="POST">
                 @csrf
-                <button type="submit" data-success-text="Invitation envoyée" class="flex items-center gap-1.5 px-4 py-2 bg-moutarde text-ardoise text-sm font-medium rounded-lg hover:bg-moutarde/90 transition-colors">
+                <button type="submit" data-success-text="Invitation envoyée" class="btn-primary bg-moutarde hover:bg-moutarde/90">
                   <i class="ti ti-user-plus"></i> Ajouter comme ami
                 </button>
               </form>
@@ -389,7 +396,7 @@
       if($user->github) $score += 20;
       if($user->competences && count($user->competences) > 0) $score += 20;
     @endphp
-    <div class="mt-4 bg-white/60 border border-kraft-dark/40 rounded-xl p-3">
+    <div class="soft-card mt-4 p-3">
       <div class="flex justify-between items-center text-xs mb-2">
         <span class="text-gray-500 flex items-center gap-1"><i class="ti ti-chart-pie text-sauge"></i> Complétude du profil</span>
         <span class="font-semibold text-ardoise">{{ $score }}%</span>
@@ -444,7 +451,7 @@
 
       {{-- Demandes d'amis --}}
       @if($pendingFriendRequests->isNotEmpty())
-      <div class="bg-kraft-light border border-kraft-dark/40 rounded-xl p-4">
+      <div class="panel-card p-4">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-sm font-semibold text-ardoise flex items-center gap-1.5">
             <i class="ti ti-user-plus text-sauge"></i> Demandes d’amis
@@ -456,8 +463,8 @@
           <div class="flex items-center justify-between gap-2 rounded-2xl border border-ardoise/10 bg-white p-2.5">
             <a href="{{ route('profil.show', $pending->sender->handle ?? $pending->sender->id) }}" class="flex items-center gap-2 min-w-0">
               <div class="w-9 h-9 rounded-full bg-ardoise text-moutarde flex items-center justify-center text-xs font-semibold overflow-hidden shrink-0">
-                @if($pending->sender->avatar)
-                  <img src="{{ asset('storage/'.$pending->sender->avatar) }}" alt="" class="w-full h-full object-cover">
+                @if($pending->sender->avatar_url)
+                  <img src="{{ $pending->sender->avatar_url }}" alt="" class="w-full h-full object-cover">
                 @else
                   {{ strtoupper(substr($pending->sender->prenom,0,1).substr($pending->sender->nom,0,1)) }}
                 @endif
@@ -576,8 +583,8 @@
           @foreach($connexions->take(5) as $ami)
           <a href="{{ route('profil.show', $ami->handle) }}" class="block text-center group">
             <div class="friend-avatar mb-1">
-              @if($ami->avatar)
-                <img src="{{ asset('storage/'.$ami->avatar) }}" alt="{{ $ami->prenom }}">
+              @if($ami->avatar_url)
+                <img src="{{ $ami->avatar_url }}" alt="{{ $ami->prenom }}">
               @else
                 {{ strtoupper(substr($ami->prenom,0,1).substr($ami->nom,0,1)) }}
               @endif
@@ -612,13 +619,13 @@
 
         {{-- Composer (visible si c'est son propre profil) --}}
         @if(auth()->id() === $user->id)
-        <div class="bg-kraft-light border border-kraft-dark/40 rounded-xl p-4 mb-4">
+        <div class="panel-card p-4 mb-4">
           <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="flex items-center gap-3 mb-3">
               <div class="avatar-ring w-9 h-9 text-sm mt-0 shrink-0">
-                @if($user->avatar)
-                  <img src="{{ asset('storage/'.$user->avatar) }}" alt="">
+                @if($user->avatar_url)
+                  <img src="{{ $user->avatar_url }}" alt="">
                 @else
                   {{ strtoupper(substr($user->prenom,0,1).substr($user->nom,0,1)) }}
                 @endif
@@ -663,8 +670,8 @@
           <div class="flex items-center gap-3 p-4 pb-0">
             <a href="{{ route('profil.show', $post->user->handle) }}">
               <div class="w-10 h-10 rounded-full bg-ardoise flex items-center justify-center text-sm font-semibold text-moutarde shrink-0 overflow-hidden">
-                @if($post->user->avatar)
-                  <img src="{{ asset('storage/'.$post->user->avatar) }}" alt="" class="w-full h-full object-cover">
+                @if($post->user->avatar_url)
+                  <img src="{{ $post->user->avatar_url }}" alt="" class="w-full h-full object-cover">
                 @else
                   {{ strtoupper(substr($post->user->prenom,0,1).substr($post->user->nom,0,1)) }}
                 @endif
@@ -852,24 +859,31 @@
         @if(auth()->id() === $user->id || !($user->private_projects ?? false) || (isset($isFriend) && $isFriend))
         <div class="grid sm:grid-cols-2 gap-4">
           @forelse($projets ?? [] as $projet)
-          <div class="bg-kraft-light border border-kraft-dark/40 rounded-xl p-4 hover:shadow-md transition-shadow">
+          @php
+            $projetNom = data_get($projet, 'nom', 'Projet sans nom');
+            $projetStatut = data_get($projet, 'statut');
+            $projetDescription = data_get($projet, 'description', '');
+            $projetTechnologies = data_get($projet, 'technologies');
+            $projetLien = data_get($projet, 'lien');
+          @endphp
+          <div class="panel-card p-4 hover:shadow-md transition-shadow">
             <div class="flex items-start justify-between mb-2">
-              <h3 class="font-semibold text-ardoise text-sm">{{ $projet->nom }}</h3>
+              <h3 class="font-semibold text-ardoise text-sm">{{ $projetNom }}</h3>
               <span class="text-xs px-2 py-0.5 rounded-full
-                {{ $projet->statut === 'en_cours' ? 'bg-moutarde/20 text-moutarde-dark' : ($projet->statut === 'termine' ? 'bg-sauge/20 text-sauge-dark' : 'bg-gray-100 text-gray-500') }}">
-                {{ ucfirst(str_replace('_', ' ', $projet->statut)) }}
+                {{ $projetStatut === 'en_cours' ? 'bg-moutarde/20 text-moutarde-dark' : ($projetStatut === 'termine' ? 'bg-sauge/20 text-sauge-dark' : 'bg-gray-100 text-gray-500') }}">
+                {{ $projetStatut ? ucfirst(str_replace('_', ' ', $projetStatut)) : 'À définir' }}
               </span>
             </div>
-            <p class="text-xs text-gray-500 leading-relaxed mb-3">{{ $projet->description }}</p>
-            @if($projet->technologies)
+            <p class="text-xs text-gray-500 leading-relaxed mb-3">{{ $projetDescription }}</p>
+            @if(!empty($projetTechnologies))
             <div class="flex flex-wrap gap-1 mb-3">
-              @foreach(explode(',', $projet->technologies) as $tech)
+              @foreach(explode(',', $projetTechnologies) as $tech)
               <span class="text-[11px] bg-ardoise/10 text-ardoise px-2 py-0.5 rounded">{{ trim($tech) }}</span>
               @endforeach
             </div>
             @endif
-            @if($projet->lien)
-            <a href="{{ $projet->lien }}" target="_blank" rel="noopener"
+            @if(!empty($projetLien))
+            <a href="{{ $projetLien }}" target="_blank" rel="noopener"
                class="text-xs text-sauge hover:text-sauge-dark flex items-center gap-1 transition-colors">
               <i class="ti ti-external-link"></i> Voir le projet
             </a>
@@ -899,7 +913,7 @@
         <div class="grid sm:grid-cols-2 gap-4">
           @forelse($groupes ?? [] as $groupe)
           <a href="{{ route('groupes.show', data_get($groupe, 'slug')) }}"
-             class="bg-kraft-light border border-kraft-dark/40 rounded-xl p-4 flex gap-3 hover:shadow-md transition-shadow">
+             class="panel-card p-4 flex gap-3 hover:shadow-md transition-shadow">
             <div class="w-12 h-12 rounded-lg bg-ardoise flex items-center justify-content-center text-moutarde font-bold text-lg shrink-0 overflow-hidden">
               @if(data_get($groupe, 'avatar'))
                 <img src="{{ asset('storage/'.data_get($groupe, 'avatar')) }}" alt="" class="w-full h-full object-cover">
@@ -974,7 +988,7 @@
       <div class="tab-panel" id="tab-evenements">
         <div class="space-y-3">
           @forelse($evenements ?? [] as $evt)
-          <div class="bg-kraft-light border border-kraft-dark/40 rounded-xl p-4 flex gap-4">
+          <div class="panel-card p-4 flex gap-4">
             <div class="shrink-0 text-center bg-ardoise text-kraft rounded-lg px-3 py-2 min-w-[52px]">
               <p class="text-xs uppercase tracking-wider text-moutarde">{{ optional(data_get($evt, 'date_debut'))->translatedFormat('M') }}</p>
               <p class="text-xl font-bold leading-none">{{ optional(data_get($evt, 'date_debut'))->format('d') }}</p>
@@ -997,10 +1011,10 @@
       {{-- ─── ONGLET : DOCUMENTS --}}
       <div class="tab-panel" id="tab-documents">
         @if(!(auth()->id() === $user->id || !($user->private_documents ?? false) || (isset($isFriend) && $isFriend)))
-          <div class="bg-kraft-light border border-kraft-dark/40 rounded-xl p-4 text-sm text-gray-600">Les documents de cet utilisateur sont privés.</div>
+          <div class="panel-card p-4 text-sm text-gray-600">Les documents de cet utilisateur sont privés.</div>
         @else
           @if($documents->isEmpty())
-          <div class="bg-kraft-light border border-kraft-dark/40 rounded-xl p-4 text-sm text-gray-600">
+          <div class="panel-card p-4 text-sm text-gray-600">
             <p>Vous n’avez aucun document partagé dans vos messages pour le moment.</p>
             <p class="mt-3 text-xs text-gray-400">Les fichiers envoyés ou reçus apparaîtront ici automatiquement.</p>
           </div>
@@ -1032,7 +1046,7 @@
 
       {{-- ─── ONGLET : AMIS --}}
       <div class="tab-panel" id="tab-amis">
-        <div class="bg-kraft-light border border-kraft-dark/40 rounded-xl p-4 space-y-6">
+        <div class="panel-card p-4 space-y-6">
           <div>
             <h3 class="text-sm font-semibold text-ardoise flex items-center gap-2 mb-4">
               <i class="ti ti-users text-sauge"></i> Amis
@@ -1050,8 +1064,8 @@
                 @foreach($friends as $relation)
                   <a href="{{ route('profil.show', $relation->user->handle ?? $relation->user->id) }}" class="flex items-center gap-3 rounded-3xl border border-ardoise/10 bg-white p-3 hover:bg-kraft-light transition-colors">
                     <div class="w-10 h-10 rounded-full bg-ardoise text-moutarde flex items-center justify-center text-sm font-semibold overflow-hidden">
-                      @if($relation->user->avatar)
-                        <img src="{{ asset('storage/'.$relation->user->avatar) }}" alt="{{ $relation->user->prenom }}" class="w-full h-full object-cover">
+                      @if($relation->user->avatar_url)
+                        <img src="{{ $relation->user->avatar_url }}" alt="{{ $relation->user->prenom }}" class="w-full h-full object-cover">
                       @else
                         {{ strtoupper(substr($relation->user->prenom,0,1).substr($relation->user->nom,0,1)) }}
                       @endif
@@ -1084,8 +1098,8 @@
                   <div class="flex items-center justify-between gap-2 rounded-3xl border border-ardoise/10 bg-white p-3">
                     <a href="{{ route('profil.show', $suggestion->handle ?? $suggestion->id) }}" class="flex items-center gap-2 min-w-0">
                       <div class="w-9 h-9 rounded-full bg-ardoise text-moutarde flex items-center justify-center text-xs font-semibold overflow-hidden shrink-0">
-                        @if($suggestion->avatar)
-                          <img src="{{ asset('storage/'.$suggestion->avatar) }}" alt="" class="w-full h-full object-cover">
+                        @if($suggestion->avatar_url)
+                          <img src="{{ $suggestion->avatar_url }}" alt="" class="w-full h-full object-cover">
                         @else
                           {{ strtoupper(substr($suggestion->prenom,0,1).substr($suggestion->nom,0,1)) }}
                         @endif

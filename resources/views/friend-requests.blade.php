@@ -33,7 +33,7 @@
                 <a href="{{ route('profil.show', $sender->handle ?? $sender->id) }}" class="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity">
                   <div class="flex-shrink-0">
                     <img 
-                      src="{{ $sender->avatar ? asset('storage/' . $sender->avatar) : 'https://via.placeholder.com/48' }}" 
+                      src="{{ $sender->avatar_url }}" 
                       alt="{{ $sender->name }}" 
                       class="w-12 h-12 rounded-full object-cover"
                     />

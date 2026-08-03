@@ -101,8 +101,8 @@
                   <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-3">
                       <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full font-bold uppercase text-white" style="background-color: #1F2E26;">
-                        @if($post->user->avatar)
-                          <img src="{{ asset('storage/'.$post->user->avatar) }}" alt="{{ $post->user->prenom }}" class="h-full w-full object-cover">
+                        @if($post->user->avatar_url)
+                          <img src="{{ $post->user->avatar_url }}" alt="{{ $post->user->prenom }}" class="h-full w-full object-cover">
                         @else
                           {{ strtoupper(substr($post->user->prenom, 0, 1).substr($post->user->nom, 0, 1)) }}
                         @endif

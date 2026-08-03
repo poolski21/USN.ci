@@ -47,7 +47,7 @@
   <style>
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    body { min-height: 100vh; background-color: #E8E0CE; color: #221E18; transition: background-color .2s ease, color .2s ease; }
+    body { min-height: 100vh; background-color: #E8E0CE; color: #221E18; transition: background-color .2s ease, color .2s ease; font-family: 'Space Grotesk', sans-serif; }
     html.dark body { background-color: #0F172A; color: #E2E8F0; }
 
     .skip-link {
@@ -85,10 +85,13 @@
     .page-card { background: rgba(255,255,255,.96); border: 1px solid #D4CABC; border-radius: 1.75rem; box-shadow: 0 20px 60px rgba(31,46,38,.08); }
     .page-card-dark { background: rgba(15,23,42,.9); border-color: rgba(148,163,184,.22); }
     .section-heading { margin-bottom: 1.25rem; font-size: .875rem; font-weight: 700; color: #1F2E26; letter-spacing: .12em; text-transform: uppercase; }
-    .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; padding: .75rem 1.25rem; border-radius: 9999px; background: #E2A33B; color: #1F2E26; font-weight: 700; transition: background .15s ease, transform .15s ease; }
-    .btn-primary:hover { background: #C98826; }
-    .btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; padding: .75rem 1.25rem; border-radius: 9999px; border: 1px solid rgba(31,46,38,.16); background: #FFF; color: #1F2E26; transition: background .15s ease, color .15s ease; }
-    .btn-secondary:hover { background: #F8F2E6; }
+    .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; padding: .75rem 1.25rem; border-radius: 9999px; background: #E2A33B; color: #1F2E26; font-weight: 700; box-shadow: 0 12px 24px rgba(226,163,59,.18); transition: transform .15s ease, box-shadow .15s ease, background .15s ease; }
+    .btn-primary:hover { background: #C98826; transform: translateY(-1px); box-shadow: 0 14px 28px rgba(226,163,59,.22); }
+    .btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; padding: .75rem 1.25rem; border-radius: 9999px; border: 1px solid rgba(31,46,38,.16); background: #FFF; color: #1F2E26; transition: background .15s ease, color .15s ease, transform .15s ease, box-shadow .15s ease; }
+    .btn-secondary:hover { background: #F8F2E6; transform: translateY(-1px); box-shadow: 0 10px 22px rgba(31,46,38,.08); }
+    .nav-pill { display: inline-flex; align-items: center; gap: .5rem; border-radius: 9999px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.08); color: #F8F2E6; padding: .6rem .95rem; transition: transform .15s ease, background .15s ease, color .15s ease, box-shadow .15s ease; }
+    .nav-pill:hover { background: rgba(255,255,255,.14); color: #FFF; transform: translateY(-1px); }
+    .nav-pill.active { background: #F8F2E6; color: #1F2E26; border-color: #F8F2E6; box-shadow: 0 10px 20px rgba(31,46,38,.12); }
     .input-base { width: 100%; border-radius: 9999px; border: 1px solid #D4CABC; background: #F8F2E6; color: #1F2E26; padding: .75rem 1rem; transition: border-color .15s ease, box-shadow .15s ease; }
     .input-base:focus { outline: none; border-color: #E2A33B; box-shadow: 0 0 0 3px rgba(226,163,59,.16); }
     .text-muted { color: #6B7280; }
@@ -115,6 +118,9 @@
     html.dark .bg-moutarde { background-color: #E2A33B !important; color: #1F2937 !important; }
     html.dark .btn-secondary { background: #111827; border-color: #374151; color: #E2E8F0; }
     html.dark .btn-secondary:hover { background: #111827; }
+    html.dark .nav-pill { background: rgba(15,23,42,.58); border-color: rgba(148,163,184,.2); color: #E2E8F0; }
+    html.dark .nav-pill:hover { background: rgba(15,23,42,.76); color: #FFF; }
+    html.dark .nav-pill.active { background: #F8F2E6; color: #1F2E26; border-color: #F8F2E6; }
     html.dark .input-base { background: #111827; border-color: #374151; color: #E2E8F0; }
     html.dark .input-base:focus { border-color: #E2A33B; box-shadow: 0 0 0 3px rgba(226,163,59,.16); }
     html.dark .hover\:bg-kraft-light:hover { background-color: #111827 !important; }

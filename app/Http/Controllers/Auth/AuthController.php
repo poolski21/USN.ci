@@ -19,6 +19,7 @@ use App\Services\ActivityLogger;
 use App\Services\CloudinaryService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -163,6 +164,11 @@ class AuthController extends Controller
 
             return back()->with('status', 'Photo de couverture mise à jour.');
         } catch (\Throwable $exception) {
+            Log::error('Cover photo upload failed', [
+                'user_id' => Auth::id(),
+                'error' => $exception->getMessage(),
+                'trace' => $exception->getTraceAsString(),
+            ]);
             return back()->with('error', 'Impossible de mettre à jour la photo de couverture.');
         }
     }
@@ -188,6 +194,11 @@ class AuthController extends Controller
 
             return back()->with('status', 'Photo de profil mise à jour.');
         } catch (\Throwable $exception) {
+            Log::error('Avatar upload failed', [
+                'user_id' => Auth::id(),
+                'error' => $exception->getMessage(),
+                'trace' => $exception->getTraceAsString(),
+            ]);
             return back()->with('error', 'Impossible de mettre à jour la photo de profil.');
         }
     }
@@ -226,7 +237,7 @@ class AuthController extends Controller
             'evenements' => 0,
         ];
 
-        $postsQuery = Post::with(['auteur', 'groupe', 'comments.user'])
+        $postsQuery = Post::with(['user', 'groupe', 'comments.user'])
             ->where('user_id', $user->id);
 
         if (! $isSelf && ! $isFriend) {

@@ -22,7 +22,7 @@ class AdminController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user || $user->role !== 'admin') {
+        if (! $user || ($user->role ?? null) !== 'admin') {
             abort(403);
         }
 
@@ -77,7 +77,7 @@ class AdminController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user || $user->role !== 'admin') {
+        if (! $user || ($user->role ?? null) !== 'admin') {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

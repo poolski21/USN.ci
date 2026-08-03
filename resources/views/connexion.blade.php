@@ -59,12 +59,14 @@
   *:focus-visible{ outline: 3px solid #E2A33B; outline-offset: 2px; border-radius: 2px; }
   @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } html{ scroll-behavior:auto; } }
   .field{
-    width:100%; border-radius:.5rem; border:1.5px solid rgba(34,30,24,0.16);
-    background: rgba(255,255,255,0.55); padding:.75rem 1rem; font-family:'Source Serif 4',serif;
-    font-size:.95rem; outline:none; transition: border-color .15s ease, box-shadow .15s ease;
+    width:100%; border-radius:9999px; border:1.5px solid rgba(34,30,24,0.16);
+    background: rgba(255,255,255,0.78); padding:.8rem 1rem; font-family:'Space Grotesk',sans-serif;
+    font-size:.95rem; outline:none; transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
   }
-  .field::placeholder{ color: rgba(34,30,24,0.4); }
-  .field:focus{ border-color:#E2A33B; box-shadow: 0 0 0 3px rgba(226,163,59,0.25); background: rgba(255,255,255,0.85); }
+  .field::placeholder{ color: rgba(34,30,24,0.42); }
+  .field:focus{ border-color:#E2A33B; box-shadow: 0 0 0 3px rgba(226,163,59,0.2); background: rgba(255,255,255,0.95); }
+  .form-card{ background: rgba(255,255,255,0.95); border: 1px solid rgba(34,30,24,0.08); border-radius: 1.75rem; box-shadow: 0 30px 80px -40px rgba(31,46,38,0.55); }
+  .hero-card{ background: linear-gradient(135deg, rgba(248,242,230,0.95), rgba(239,230,211,0.85)); border: 1px solid rgba(255,255,255,0.16); border-radius: 1.25rem; box-shadow: 0 24px 50px -30px rgba(31,46,38,0.45); }
 </style>
 </head>
 
@@ -72,7 +74,7 @@
 
 <a href="#contenu" class="skip-link absolute -left-[999px] top-0 bg-moutarde text-ardoise font-display px-4 py-2 z-50">Aller au contenu principal</a>
 
-<header class="sticky top-0 z-40 bg-ardoise text-kraft border-b border-black/20">
+<header class="sticky top-0 z-40 border-b border-black/20 bg-ardoise/95 text-kraft shadow-[0_12px_40px_rgba(31,46,38,0.16)] backdrop-blur">
   <div class="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
   <a href="{{ url('/') }}" class="flex items-center gap-2.5 font-display font-semibold text-lg shrink-0">
       <span class="grid place-items-center w-9 h-9 rounded-full bg-moutarde text-ardoise font-display font-bold text-base ring-2 ring-kraft/30">USN</span>
@@ -97,7 +99,7 @@
     </div>
 
     <div class="relative w-72 self-center my-10">
-      <div class="note-card relative bg-kraft-light text-tinta rounded-sm rotate-[-2deg] p-5">
+      <div class="hero-card note-card relative bg-kraft-light text-tinta rotate-[-2deg] p-5">
         <span class="pin"></span>
         <p class="font-hand text-xl leading-snug">« J'ai trouvé mon binôme de TP en 10 minutes sur USN, plus jamais sans. »</p>
         <p class="mt-3 text-xs font-display text-tinta/55">Aïcha K. · L3 Économie</p>
@@ -109,7 +111,7 @@
 
   <!-- PANNEAU DROIT : formulaire -->
   <section class="bg-kraft-light paper-grid flex items-center justify-center px-5 sm:px-8 py-14">
-    <div class="w-full max-w-md">
+    <div class="form-card w-full max-w-md p-6 sm:p-8">
 
       <p class="font-display text-xs uppercase tracking-[0.2em] text-encre mb-3">Connexion</p>
       <h2 class="font-display font-semibold text-3xl mb-2">Content de te revoir</h2>
@@ -149,7 +151,7 @@
           <a href="#" class="font-display hover:text-encre transition-colors underline decoration-tinta/20 underline-offset-2">Mot de passe oublié ?</a>
         </div>
 
-        <button type="submit" class="stamp-btn w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-md bg-moutarde text-ardoise font-display font-semibold shadow-lg">
+        <button type="submit" class="stamp-btn w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-moutarde text-ardoise font-display font-semibold shadow-[0_16px_35px_-20px_rgba(226,163,59,0.7)]">
           Se connecter
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
         </button>

@@ -164,9 +164,13 @@ class SocialController extends Controller
                 return $message->sender_id === $user->id ? $message->receiver_id : $message->sender_id;
             });
 
-        $threads = $conversations->map(function ($messages, $otherId) use ($user) {
+        // Get all unique user IDs to avoid N+1 queries
+        $userIds = $conversations->keys()->toArray();
+        $users = User::whereIn('id', $userIds)->get()->keyBy('id');
+
+        $threads = $conversations->map(function ($messages, $otherId) use ($user, $users) {
             return [
-                'friend' => User::find($otherId),
+                'friend' => $users->get($otherId),
                 'last' => $messages->first(),
                 'unreadCount' => $messages->where('receiver_id', $user->id)->whereNull('read_at')->count(),
             ];
@@ -209,20 +213,28 @@ class SocialController extends Controller
             $query->where('sender_id', $selected->id)->where('receiver_id', $user->id);
         })->oldest()->get();
 
+        // Get all conversations with proper eager loading
+        $allConversations = SocialMessage::where('sender_id', $user->id)
+            ->orWhere('receiver_id', $user->id)
+            ->latest('created_at')
+            ->get()
+            ->groupBy(function (SocialMessage $message) use ($user) {
+                return $message->sender_id === $user->id ? $message->receiver_id : $message->sender_id;
+            });
+
+        $userIds = $allConversations->keys()->toArray();
+        $users = User::whereIn('id', $userIds)->get()->keyBy('id');
+
+        $threads = $allConversations->map(function ($conversationMessages, $otherId) use ($user, $users) {
+            return [
+                'friend' => $users->get($otherId),
+                'last' => $conversationMessages->first(),
+                'unreadCount' => $conversationMessages->where('receiver_id', $user->id)->whereNull('read_at')->count(),
+            ];
+        })->filter();
+
         return view('messages', [
-            'threads' => SocialMessage::where('sender_id', $user->id)
-                ->orWhere('receiver_id', $user->id)
-                ->latest('created_at')
-                ->get()
-                ->groupBy(function (SocialMessage $message) use ($user) {
-                    return $message->sender_id === $user->id ? $message->receiver_id : $message->sender_id;
-                })->map(function ($messages, $otherId) use ($user) {
-                    return [
-                        'friend' => User::find($otherId),
-                        'last' => $messages->first(),
-                        'unreadCount' => $messages->where('receiver_id', $user->id)->whereNull('read_at')->count(),
-                    ];
-                })->filter(),
+            'threads' => $threads,
             'selected' => $selected,
             'messages' => $messages,
         ]);
@@ -464,6 +476,11 @@ class SocialController extends Controller
                 $upload = app(CloudinaryService::class)->upload($file->getRealPath(), 'usnci/attachments');
                 $attachmentPublicId = $upload['public_id'];
             } catch (\Throwable $exception) {
+                \Illuminate\Support\Facades\Log::error('Message attachment upload failed', [
+                    'user_id' => Auth::id(),
+                    'error' => $exception->getMessage(),
+                    'file' => $file->getClientOriginalName(),
+                ]);
                 return back()->with('error', 'Impossible de téléverser la pièce jointe.')->withInput();
             }
 
@@ -497,7 +514,7 @@ class SocialController extends Controller
             return response()->json([
                 'id' => $message->id,
                 'body' => $message->body,
-                'attachment' => $message->attachment_path ? [
+                'attachment' => ($message->attachment_public_id || $message->attachment_path) ? [
                     'url' => $message->attachment_url,
                     'name' => $message->attachment_name,
                     'type' => $message->attachment_type,
@@ -519,10 +536,10 @@ class SocialController extends Controller
         }
 
         $data = $request->validate([
-            'body' => ['nullable', 'string'],
+            'body' => ['nullable', 'string', 'max:4000'],
         ]);
 
-        $body = trim($data['body'] ?? '');
+        $body = trim(strip_tags($data['body'] ?? ''));
 
         if ($body === '' && ! $message->attachment_path && ! $message->attachment_public_id) {
             return back()->withErrors(['body' => 'Le message ne peut pas être vide.'])->withInput();
@@ -554,7 +571,7 @@ class SocialController extends Controller
 
         $post = new Post();
         $post->user_id = Auth::id();
-        $post->contenu = $data['contenu'] ?? null;
+        $post->contenu = $data['contenu'] ? strip_tags($data['contenu']) : null;
         $post->visibilite = $data['visibilite'] ?? 'public';
         $post->group_id = $data['group_id'] ?? null;
 
@@ -571,18 +588,26 @@ class SocialController extends Controller
         // Si c'est un post de groupe, ne pas créer de notifications aux amis
         if (!$post->group_id) {
             $friends = Auth::user()->friends()->pluck('id');
-            foreach ($friends as $friendId) {
-                SocialNotification::create([
-                    'user_id' => $friendId,
-                    'type' => 'friend_post',
-                    'data' => [
-                        'post_id' => $post->id,
-                        'author_id' => Auth::id(),
-                        'author_name' => Auth::user()->name,
-                        'author_handle' => Auth::user()->handle,
-                        'preview' => Str::limit($post->contenu, 80),
-                    ],
-                ]);
+            
+            // Use batch insert for better performance instead of looping
+            if ($friends->count() > 0) {
+                $notifications = $friends->map(function ($friendId) use ($post) {
+                    return [
+                        'user_id' => $friendId,
+                        'type' => 'friend_post',
+                        'data' => json_encode([
+                            'post_id' => $post->id,
+                            'author_id' => Auth::id(),
+                            'author_name' => Auth::user()->name,
+                            'author_handle' => Auth::user()->handle,
+                            'preview' => Str::limit($post->contenu, 80),
+                        ]),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                })->toArray();
+                
+                SocialNotification::insert($notifications);
             }
         }
 
@@ -630,17 +655,21 @@ class SocialController extends Controller
     {
         $data = $request->validated();
 
-        $group = Group::create([
-            'nom' => $data['nom'],
-            'slug' => Str::slug($data['nom']) . '-' . uniqid(),
-            'admin_id' => Auth::id(),
-            'description' => $data['description'] ?? null,
-            'visibilite' => $data['visibilite'],
-            'max_members' => $data['max_members'] ?? null,
-        ]);
+        $group = \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+            $group = Group::create([
+                'nom' => $data['nom'],
+                'slug' => Str::slug($data['nom']) . '-' . uniqid(),
+                'admin_id' => Auth::id(),
+                'description' => $data['description'] ?? null,
+                'visibilite' => $data['visibilite'],
+                'max_members' => $data['max_members'] ?? null,
+            ]);
 
-        $group->membres()->attach(Auth::id());
-        ActivityLogger::log(Auth::user(), 'group.created', 'Groupe créé', ['group_id' => $group->id]);
+            $group->membres()->attach(Auth::id());
+            ActivityLogger::log(Auth::user(), 'group.created', 'Groupe créé', ['group_id' => $group->id]);
+
+            return $group;
+        });
 
         return redirect()->route('groupes.show', $group->slug)->with('status', 'Le groupe a été créé avec succès.');
     }
