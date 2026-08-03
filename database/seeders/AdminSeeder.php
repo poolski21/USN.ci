@@ -36,6 +36,9 @@ class AdminSeeder extends Seeder
                 'password' => Hash::make($password),
                 'role' => 'admin',
                 'email_verified_at' => now(),
+                'is_certified' => true,
+                'certified_via' => 'admin',
+                'certified_at' => now(),
             ]
         );
     }
