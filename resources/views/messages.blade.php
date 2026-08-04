@@ -220,9 +220,18 @@
         let isLoadingHistory = false;
         let hasMoreMessages = Boolean(oldestMessageId);
 
-        function scrollMessagesToBottom() {
+        function isNearBottom(threshold = 120) {
+          if (!messagesContainer) return false;
+          return messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight <= threshold;
+        }
+
+        function scrollMessagesToBottom(smooth = false) {
           if (!messagesContainer) return;
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          if (smooth && 'scrollBehavior' in document.documentElement.style) {
+            messagesContainer.scrollTo({ top: messagesContainer.scrollHeight, behavior: 'smooth' });
+          } else {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }
         }
 
         function createMessageElement(message) {
@@ -300,11 +309,11 @@
                 // Ignore if it's from us
                 if (message.sender_id === currentUserId) return;
 
-                const nearBottom = (messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight) < 200;
+                const shouldScroll = isNearBottom(200);
                 const el = createMessageElement(message);
                 messagesContainer.appendChild(el);
-                if (nearBottom) {
-                  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                if (shouldScroll) {
+                  scrollMessagesToBottom(true);
                 }
 
                 // Mark as read and update unread badges
@@ -453,7 +462,7 @@
               const message = payload;
               const newMessage = createMessageElement(message);
               messagesContainer.appendChild(newMessage);
-              messagesContainer.scrollTop = messagesContainer.scrollHeight;
+              scrollMessagesToBottom(true);
               form.reset();
               attachedVoiceFile = null;
               voicePreview.classList.add('hidden');
