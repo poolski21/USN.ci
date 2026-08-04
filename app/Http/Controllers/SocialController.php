@@ -21,6 +21,7 @@ use App\Services\ActivityLogger;
 use App\Services\CloudinaryService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use App\Events\MessageSent;
 
 class SocialController extends Controller
 {
@@ -189,7 +190,11 @@ class SocialController extends Controller
                     $query->where('sender_id', $user->id)->where('receiver_id', $selected->id);
                 })->orWhere(function ($query) use ($user, $selected) {
                     $query->where('sender_id', $selected->id)->where('receiver_id', $user->id);
-                })->oldest()->get();
+                })->latest('id')
+                    ->limit(25)
+                    ->get()
+                    ->sortBy('id')
+                    ->values();
             }
         }
 
@@ -211,7 +216,11 @@ class SocialController extends Controller
             $query->where('sender_id', $user->id)->where('receiver_id', $selected->id);
         })->orWhere(function ($query) use ($user, $selected) {
             $query->where('sender_id', $selected->id)->where('receiver_id', $user->id);
-        })->oldest()->get();
+        })->latest('id')
+            ->limit(25)
+            ->get()
+            ->sortBy('id')
+            ->values();
 
         // Get all conversations with proper eager loading
         $allConversations = SocialMessage::where('sender_id', $user->id)
@@ -237,6 +246,63 @@ class SocialController extends Controller
             'threads' => $threads,
             'selected' => $selected,
             'messages' => $messages,
+        ]);
+    }
+
+    public function loadMoreMessages(Request $request, string $handle)
+    {
+        $user = Auth::user();
+        $other = $this->findUserByHandle($handle);
+
+        $request->validate([
+            'before' => ['nullable', 'integer', 'exists:social_messages,id'],
+            'limit' => ['nullable', 'integer', 'min:5', 'max:100'],
+        ]);
+
+        $limit = $request->input('limit', 25);
+
+        $threadQuery = SocialMessage::where(function ($query) use ($user, $other) {
+            $query->where('sender_id', $user->id)->where('receiver_id', $other->id);
+        })->orWhere(function ($query) use ($user, $other) {
+            $query->where('sender_id', $other->id)->where('receiver_id', $user->id);
+        });
+
+        if ($request->filled('before')) {
+            $threadQuery->where('id', '<', $request->input('before'));
+        }
+
+        $messages = $threadQuery->latest('id')
+            ->limit($limit)
+            ->get()
+            ->sortBy('id')
+            ->values();
+
+        $hasMore = false;
+
+        if ($messages->isNotEmpty()) {
+            $oldestId = $messages->first()->id;
+            $hasMore = SocialMessage::where(function ($query) use ($user, $other) {
+                $query->where('sender_id', $user->id)->where('receiver_id', $other->id);
+            })->orWhere(function ($query) use ($user, $other) {
+                $query->where('sender_id', $other->id)->where('receiver_id', $user->id);
+            })->where('id', '<', $oldestId)->exists();
+        }
+
+        return response()->json([
+            'messages' => $messages->map(function (SocialMessage $message) {
+                return [
+                    'id' => $message->id,
+                    'sender_id' => $message->sender_id,
+                    'body' => $message->body,
+                    'attachment' => ($message->attachment_public_id || $message->attachment_path) ? [
+                        'url' => $message->attachment_url,
+                        'name' => $message->attachment_name,
+                        'type' => $message->attachment_type,
+                    ] : null,
+                    'created_at' => $message->created_at->format('d/m/Y H:i'),
+                ];
+            }),
+            'hasMore' => $hasMore,
         ]);
     }
 
@@ -509,6 +575,14 @@ class SocialController extends Controller
                 'sender_handle' => $sender->handle,
             ],
         ]);
+
+        // Broadcast the new message to the conversation channel for realtime updates.
+        // Use toOthers() so the sender does not receive a duplicate via broadcast.
+        try {
+            broadcast(new MessageSent($message))->toOthers();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Broadcast MessageSent failed', ['error' => $e->getMessage(), 'message_id' => $message->id]);
+        }
 
         if ($request->expectsJson()) {
             return response()->json([

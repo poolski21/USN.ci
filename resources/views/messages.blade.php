@@ -19,7 +19,7 @@
              role="listitem"
              data-search="{{ strtolower($thread['friend']->prenom . ' ' . $thread['friend']->nom . ' ' . ($thread['last']->body ?? '')) }}"
              class="thread-item flex gap-3 items-center rounded-3xl p-3 transition-colors {{ optional($selected)->id === $thread['friend']->id ? 'bg-kraft-light border border-ardoise/20 shadow-sm dark:bg-slate-900/80 dark:border-slate-700' : 'hover:bg-kraft-light hover:border hover:border-ardoise/10 dark:hover:bg-slate-900/80' }}" aria-label="Conversation avec {{ $thread['friend']->prenom }} {{ $thread['friend']->nom }}">
-            <div class="flex-shrink-0 h-14 w-14 rounded-full bg-sauge/10 text-sauge grid place-items-center text-lg font-semibold text-ardoise">
+            <div class="shrink-0 h-14 w-14 rounded-full bg-sauge/10 text-sauge grid place-items-center text-lg font-semibold text-ardoise">
               @if($thread['friend']->avatar_url)
                 <img src="{{ $thread['friend']->avatar_url }}" alt="{{ $thread['friend']->prenom }}" class="h-full w-full rounded-full object-cover" />
               @else
@@ -52,7 +52,7 @@
         <div class="flex items-center justify-between gap-4">
           <div class="flex items-center gap-3">
             @if($selected)
-              <div class="flex-shrink-0 h-14 w-14 rounded-full bg-sauge/10 text-sauge grid place-items-center text-lg font-semibold text-ardoise overflow-hidden">
+              <div class="shrink-0 h-14 w-14 rounded-full bg-sauge/10 text-sauge grid place-items-center text-lg font-semibold text-ardoise overflow-hidden">
                 @if($selected->avatar_url)
                   <img src="{{ $selected->avatar_url }}" alt="{{ $selected->prenom }}" class="h-full w-full object-cover" />
                 @else
@@ -98,10 +98,11 @@
       </div>
 
       @if($selected)
-        <div id="messages-container" class="flex-1 min-h-[40vh] overflow-y-auto px-6 py-5 space-y-4 bg-[#F3F1EB] dark:bg-slate-950/90">
+        <div id="messages-container" data-history-url="{{ $selected ? route('messages.history', ['handle' => $selected->handle ?? $selected->id]) : '' }}" data-conversation-handle="{{ $selected ? ($selected->handle ?? $selected->id) : '' }}" data-conversation-user-id="{{ $selected ? $selected->id : '' }}" data-oldest-message-id="{{ optional($messages->first())->id }}" class="flex-1 min-h-[40vh] overflow-y-auto px-6 py-5 space-y-4 bg-[#F3F1EB] dark:bg-slate-950/90">
+          <div id="load-more-indicator" class="hidden text-center text-sm text-gray-500 mb-3">Chargement des messages précédents...</div>
           @forelse($messages as $message)
             <div class="flex {{ $message->sender_id === auth()->id() ? 'justify-end' : 'justify-start' }}">
-              <div data-own-message="{{ $message->sender_id === auth()->id() ? 'true' : 'false' }}" data-message-id="{{ $message->id }}" class="message-bubble max-w-[85%] rounded-[28px] p-4 shadow-sm relative {{ $message->sender_id === auth()->id() ? 'bg-[#F8F2E6] text-ardoise rounded-br-[6px] dark:bg-slate-800 dark:text-gray-100' : 'bg-white text-ardoise rounded-bl-[6px] border border-ardoise/10 dark:bg-slate-900/90 dark:text-gray-100 dark:border-slate-700' }}">
+              <div data-own-message="{{ $message->sender_id === auth()->id() ? 'true' : 'false' }}" data-message-id="{{ $message->id }}" class="message-bubble max-w-[85%] rounded-[28px] p-4 shadow-sm relative {{ $message->sender_id === auth()->id() ? 'bg-[#F8F2E6] text-ardoise rounded-br-md dark:bg-slate-800 dark:text-gray-100' : 'bg-white text-ardoise rounded-bl-md border border-ardoise/10 dark:bg-slate-900/90 dark:text-gray-100 dark:border-slate-700' }}">
                 @if($message->body)
                   <p class="text-sm leading-relaxed">{{ $message->body }}</p>
                 @endif
@@ -183,7 +184,7 @@
               <button type="button" id="voice-record-button" class="inline-flex h-12 items-center justify-center rounded-full border border-ardoise/10 bg-kraft-light px-4 py-2 text-sm font-semibold text-ardoise hover:bg-kraft/90 transition-colors">🎤 Enregistrer</button>
             </div>
             <input type="file" name="attachment" id="message-attachment" class="hidden" accept="*/*">
-            <textarea name="body" id="message-body" rows="1" class="min-h-[48px] flex-1 resize-none rounded-full border border-ardoise/10 bg-[#F8F2E6] dark:bg-slate-800 dark:border-slate-700 px-4 py-3 text-sm text-ardoise dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-moutarde/40 dark:focus:ring-moutarde/40 placeholder:text-gray-500 dark:placeholder:text-gray-400" placeholder="Écris un message..." aria-label="Écrire un message"></textarea>
+            <textarea name="body" id="message-body" rows="1" class="min-h-12 flex-1 resize-none rounded-full border border-ardoise/10 bg-[#F8F2E6] dark:bg-slate-800 dark:border-slate-700 px-4 py-3 text-sm text-ardoise dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-moutarde/40 dark:focus:ring-moutarde/40 placeholder:text-gray-500 dark:placeholder:text-gray-400" placeholder="Écris un message..." aria-label="Écrire un message"></textarea>
             <button type="submit" id="message-send-button" class="inline-flex h-12 items-center justify-center rounded-full bg-ardoise px-6 text-sm font-semibold text-kraft hover:bg-ardoise-light transition-colors">Envoyer</button>
           </div>
           <div id="voice-preview" class="hidden mt-4 rounded-3xl border border-ardoise/10 bg-kraft-light p-4 text-sm text-gray-600 dark:bg-slate-900/90 dark:border-slate-700"></div>
@@ -214,9 +215,200 @@
           return;
         }
 
+        const historyUrl = messagesContainer?.dataset.historyUrl || '';
+        let oldestMessageId = messagesContainer?.dataset.oldestMessageId ? Number(messagesContainer.dataset.oldestMessageId) : null;
+        let isLoadingHistory = false;
+        let hasMoreMessages = Boolean(oldestMessageId);
+
         function scrollMessagesToBottom() {
           if (!messagesContainer) return;
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function createMessageElement(message) {
+          const wrapper = document.createElement('div');
+          wrapper.className = message.sender_id === {{ auth()->id() }} ? 'flex justify-end' : 'flex justify-start';
+
+          const bubble = document.createElement('div');
+          bubble.className = 'message-bubble max-w-[85%] rounded-[28px] p-4 shadow-sm relative ' + (message.sender_id === {{ auth()->id() }} ? 'bg-[#F8F2E6] text-ardoise rounded-br-[6px] dark:bg-slate-800 dark:text-gray-100' : 'bg-white text-ardoise rounded-bl-[6px] border border-ardoise/10 dark:bg-slate-900/90 dark:text-gray-100 dark:border-slate-700');
+          bubble.dataset.ownMessage = message.sender_id === {{ auth()->id() }} ? 'true' : 'false';
+          bubble.dataset.messageId = message.id;
+
+          if (message.body) {
+            const body = document.createElement('p');
+            body.className = 'text-sm leading-relaxed';
+            body.innerHTML = escapeHtml(message.body);
+            bubble.appendChild(body);
+          }
+
+          if (message.attachment) {
+            const attachmentWrapper = document.createElement('div');
+            attachmentWrapper.className = 'mt-3 rounded-3xl border border-ardoise/20 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/90';
+            attachmentWrapper.innerHTML = `
+              <p class="text-xs uppercase tracking-[.18em] text-gray-400 mb-2">Fichier joint</p>
+              ${message.attachment.type.startsWith('audio/') ? `
+                <div class="mb-3">
+                  <audio controls class="w-full rounded-3xl border border-ardoise/10 bg-[#F8F2E6] p-2">
+                    <source src="${escapeHtml(message.attachment.url)}" type="${escapeHtml(message.attachment.type)}">
+                    Votre navigateur ne prend pas en charge la lecture audio.
+                  </audio>
+                </div>
+              ` : message.attachment.type.startsWith('video/') ? `
+                <div class="mb-3">
+                  <video controls class="w-full rounded-3xl border border-ardoise/10 bg-black/5">
+                    <source src="${escapeHtml(message.attachment.url)}" type="${escapeHtml(message.attachment.type)}">
+                    Votre navigateur ne prend pas en charge la lecture vidéo.
+                  </video>
+                </div>
+              ` : ''}
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div class="space-y-1">
+                  <p class="text-sm font-medium text-ardoise">${escapeHtml(message.attachment.name)}</p>
+                  <p class="text-xs text-gray-500">${escapeHtml(message.attachment.type)}</p>
+                </div>
+                <div class="flex gap-2">
+                  <a href="${escapeHtml(message.attachment.url)}" target="_blank" class="rounded-full border border-ardoise/20 bg-white px-3 py-2 text-xs font-semibold text-ardoise hover:bg-ardoise/5 transition-colors">Ouvrir</a>
+                  <a href="${escapeHtml(message.attachment.url)}" download class="rounded-full bg-moutarde px-3 py-2 text-xs font-semibold text-ardoise hover:bg-moutarde/90 transition-colors">Télécharger</a>
+                </div>
+              </div>
+            `;
+            bubble.appendChild(attachmentWrapper);
+          }
+
+          const timestamp = document.createElement('p');
+          timestamp.className = 'text-[10px] text-gray-400 mt-3 text-right';
+          timestamp.textContent = message.created_at;
+          bubble.appendChild(timestamp);
+
+          wrapper.appendChild(bubble);
+          return wrapper;
+        }
+
+        // Real-time listener: Echo private conversation channel
+        (function setupEchoListener() {
+          try {
+            const currentUserId = {{ auth()->id() }};
+            const otherUserId = messagesContainer?.dataset.conversationUserId ? Number(messagesContainer.dataset.conversationUserId) : null;
+            if (!window.Echo || !otherUserId) return;
+
+            const a = Math.min(currentUserId, otherUserId);
+            const b = Math.max(currentUserId, otherUserId);
+            window.Echo.private(`conversation.${a}.${b}`)
+              .listen('.message.sent', function (e) {
+                const message = e.message;
+                if (!message) return;
+                // Ignore if it's from us
+                if (message.sender_id === currentUserId) return;
+
+                const nearBottom = (messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight) < 200;
+                const el = createMessageElement(message);
+                messagesContainer.appendChild(el);
+                if (nearBottom) {
+                  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+
+                // Mark as read and update unread badges
+                (async function markRead() {
+                  try {
+                    const readUrl = `/messages/${messagesContainer.dataset.conversationHandle}/read`;
+                    const token = document.querySelector('input[name="_token"]').value;
+                    const res = await fetch(readUrl, {
+                      method: 'POST',
+                      headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': token,
+                        'Accept': 'application/json',
+                      },
+                    });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    document.querySelectorAll('.unread-messages-badge').forEach(function (el) {
+                      if (data.unreadMessages && data.unreadMessages > 0) {
+                        el.textContent = data.unreadMessages;
+                      } else {
+                        el.remove();
+                      }
+                    });
+                  } catch (err) {
+                    // ignore
+                  }
+                })();
+              });
+          } catch (err) {
+            // fail silently if Echo isn't available
+          }
+        })();
+
+        async function fetchOlderMessages() {
+          if (!historyUrl || !oldestMessageId || isLoadingHistory || !hasMoreMessages) {
+            return;
+          }
+
+          const loadIndicator = document.getElementById('load-more-indicator');
+          isLoadingHistory = true;
+          loadIndicator.classList.remove('hidden');
+          loadIndicator.textContent = 'Chargement des messages précédents...';
+
+          const previousScrollHeight = messagesContainer.scrollHeight;
+          const previousScrollTop = messagesContainer.scrollTop;
+
+          const url = `${historyUrl}?before=${oldestMessageId}&limit=25`;
+          try {
+            const response = await fetch(url, {
+              headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error('Impossible de charger l’historique.');
+            }
+
+            const payload = await response.json();
+            if (payload.messages.length === 0) {
+              hasMoreMessages = false;
+              loadIndicator.textContent = 'Fin de la conversation.';
+              return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            payload.messages.forEach(function (message) {
+              const element = createMessageElement(message);
+              fragment.appendChild(element);
+            });
+
+            // Insert the older messages right after the load indicator to preserve order.
+            const afterNode = loadIndicator.nextSibling;
+            messagesContainer.insertBefore(fragment, afterNode);
+            oldestMessageId = payload.messages[0].id;
+            hasMoreMessages = Boolean(payload.hasMore);
+
+            const newScrollHeight = messagesContainer.scrollHeight;
+            messagesContainer.scrollTop = newScrollHeight - previousScrollHeight + previousScrollTop;
+
+            // Hide the indicator after insertion; if we've reached the end, keep the text briefly then hide.
+            if (!hasMoreMessages) {
+              loadIndicator.textContent = 'Fin de la conversation.';
+              setTimeout(function () {
+                loadIndicator.classList.add('hidden');
+              }, 2000);
+            } else {
+              loadIndicator.classList.add('hidden');
+            }
+          } catch (error) {
+            loadIndicator.textContent = 'Erreur de chargement. Rafraîchissez la page.';
+          } finally {
+            isLoadingHistory = false;
+          }
+        }
+
+        if (messagesContainer && historyUrl) {
+          messagesContainer.addEventListener('scroll', function () {
+            if (messagesContainer.scrollTop < 120 && !isLoadingHistory && hasMoreMessages) {
+              fetchOlderMessages();
+            }
+          });
         }
 
         if (form) {
@@ -259,28 +451,7 @@
               }
 
               const message = payload;
-              const newMessage = document.createElement('div');
-              newMessage.className = 'max-w-[85%] rounded-3xl p-4 ml-auto bg-kraft-light text-ardoise';
-              newMessage.innerHTML = `
-                ${message.body ? `<p class="text-sm leading-relaxed">${escapeHtml(message.body)}</p>` : ''}
-                ${message.attachment ? `
-                  <div class="mt-3 rounded-2xl border border-ardoise/20 bg-white p-3">
-                    <p class="text-xs uppercase tracking-[.18em] text-gray-400 mb-2">Fichier joint</p>
-                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div class="space-y-1">
-                        <p class="text-sm font-medium text-ardoise">${escapeHtml(message.attachment.name)}</p>
-                        <p class="text-xs text-gray-500">${escapeHtml(message.attachment.type)}</p>
-                      </div>
-                      <div class="flex gap-2">
-                        <a href="${escapeHtml(message.attachment.url)}" target="_blank" class="rounded-full border border-ardoise/20 bg-white px-3 py-2 text-xs font-semibold text-ardoise hover:bg-ardoise/5 transition-colors">Ouvrir</a>
-                        <a href="${escapeHtml(message.attachment.url)}" download class="rounded-full bg-moutarde px-3 py-2 text-xs font-semibold text-ardoise hover:bg-moutarde/90 transition-colors">Télécharger</a>
-                      </div>
-                    </div>
-                  </div>
-                ` : ''}
-                <p class="text-[10px] text-gray-400 mt-3 text-right">${escapeHtml(message.created_at)}</p>
-              `;
-
+              const newMessage = createMessageElement(message);
               messagesContainer.appendChild(newMessage);
               messagesContainer.scrollTop = messagesContainer.scrollHeight;
               form.reset();
@@ -299,11 +470,6 @@
           });
         }
 
-        function scrollMessagesToBottom() {
-          if (!messagesContainer) return;
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
         function escapeHtml(text) {
           const div = document.createElement('div');
           div.textContent = text;
@@ -315,10 +481,6 @@
         let mediaRecorder;
         let audioChunks = [];
         let attachedVoiceFile = null;
-
-        if (form) {
-          const originalFormSubmit = form.addEventListener;
-        }
 
         if (voiceButton) {
           voiceButton.addEventListener('click', async function () {

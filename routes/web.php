@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/friend-requests/{id}/supprimer', [SocialController::class, 'removeFriend'])->name('friend.requests.remove');
     Route::get('/messages', [SocialController::class, 'messages'])->name('messages');
     Route::get('/messages/{handle}', [SocialController::class, 'conversation'])->name('messages.conversation');
+    Route::get('/messages/{handle}/history', [SocialController::class, 'loadMoreMessages'])->name('messages.history');
     Route::post('/messages/{handle}/read', [SocialController::class, 'markMessagesRead'])->name('messages.read');
     Route::post('/messages/{handle}', [SocialController::class, 'sendMessage'])->middleware('throttle:20,1')->name('messages.send');
     Route::patch('/messages/{handle}/message/{message}', [SocialController::class, 'updateMessage'])->name('messages.message.update');
