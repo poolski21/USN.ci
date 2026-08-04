@@ -70,15 +70,27 @@
       let answerApplied = false;
 
       async function csrfFetch(url, data) {
-        return fetch(url, {
+        const token = window.USN?.csrfToken || document.querySelector('meta[name="csrf-token"]')?.content;
+        if (!token) {
+          throw new Error('Jeton CSRF introuvable. Vérifiez que le layout charge bien la balise meta csrf-token.');
+        }
+
+        const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': window.USN.csrfToken,
+            'X-CSRF-TOKEN': token,
             'X-Requested-With': 'XMLHttpRequest',
           },
           body: JSON.stringify(data),
         });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`Requête échouée ${response.status}: ${text}`);
+        }
+
+        return response;
       }
 
       function updateMediaVisibility() {
@@ -96,6 +108,10 @@
       }
 
       async function createPeerConnection() {
+        if (typeof RTCPeerConnection === 'undefined') {
+          throw new Error('WebRTC non supporté par ce navigateur.');
+        }
+
         peerConnection = new RTCPeerConnection({
           iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
         });
@@ -121,6 +137,10 @@
       }
 
       async function getLocalStream() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Accès aux médias non supporté par ce navigateur.');
+        }
+
         const constraints = callType === 'video' ? { audio: true, video: true } : { audio: true };
         localStream = await navigator.mediaDevices.getUserMedia(constraints);
 
@@ -248,12 +268,16 @@
         isCallActive = false;
       });
 
+      function showCallInitializationError(error) {
+        console.error('Erreur d\u2019initialisation de l\u2019appel :', error);
+        alert(`Erreur lors de l'initialisation de l'appel : ${error.message || 'erreur inconnue'}`);
+      }
+
       document.addEventListener('DOMContentLoaded', async function () {
         try {
           await initializeCall();
         } catch (error) {
-          console.error(error);
-          alert('Erreur lors de l’initialisation de l’appel.');
+          showCallInitializationError(error);
         }
 
         setInterval(pollCallSession, 3000);
