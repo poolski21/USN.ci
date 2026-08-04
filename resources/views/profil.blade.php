@@ -732,13 +732,13 @@
             @endif
           </div>
 
-          @if($post->media_path)
+          @if($post->media_url)
           <div class="px-4 pb-3">
             @if(str_starts_with($post->media_type ?? '', 'image'))
-              <img src="{{ asset('storage/'.$post->media_path) }}" alt="Media du post"
+              <img src="{{ $post->media_url }}" alt="Media du post"
                    class="w-full rounded-lg object-cover max-h-80">
             @elseif(str_starts_with($post->media_type ?? '', 'video'))
-              <video src="{{ asset('storage/'.$post->media_path) }}" controls
+              <video src="{{ $post->media_url }}" controls
                      class="w-full rounded-lg max-h-80"></video>
             @endif
           </div>

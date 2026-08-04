@@ -551,7 +551,7 @@ class SocialController extends Controller
             }
 
             $attachmentPath = $file->store('messages', 'public');
-            $attachmentType = $file->getClientMimeType();
+            $attachmentType = null
             $attachmentName = $file->getClientOriginalName();
         }
 
@@ -651,7 +651,10 @@ class SocialController extends Controller
 
         if ($request->hasFile('media')) {
             $file = $request->file('media');
-            $post->media_path = $file->store('posts', 'public');
+            $upload = app(CloudinaryService::class)->upload($file->getRealPath(), 'usnci/posts');
+
+            $post->media_public_id = $upload['public_id'];
+            $post->media_path = null;
             $post->media_type = $file->getClientMimeType();
             $post->media_name = $file->getClientOriginalName();
         }
@@ -697,9 +700,17 @@ class SocialController extends Controller
 
         if ($request->hasFile('media')) {
             $file = $request->file('media');
-            $post->media_path = $file->store('posts', 'public');
+            $oldMediaPublicId = $post->media_public_id;
+            $upload = app(CloudinaryService::class)->upload($file->getRealPath(), 'usnci/posts');
+
+            $post->media_public_id = $upload['public_id'];
+            $post->media_path = null;
             $post->media_type = $file->getClientMimeType();
             $post->media_name = $file->getClientOriginalName();
+
+            if ($oldMediaPublicId) {
+                app(CloudinaryService::class)->destroy($oldMediaPublicId);
+            }
         }
 
         $post->save();
@@ -713,6 +724,18 @@ class SocialController extends Controller
 
         if ($post->user_id !== Auth::id()) {
             return back()->with('status', 'Vous ne pouvez supprimer que vos propres publications.');
+        }
+
+        if ($post->media_public_id) {
+            try {
+                app(CloudinaryService::class)->destroy($post->media_public_id);
+            } catch (\Throwable $exception) {
+                \Illuminate\Support\Facades\Log::error('Failed to destroy Cloudinary post media', [
+                    'post_id' => $post->id,
+                    'media_public_id' => $post->media_public_id,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
         }
 
         $post->delete();

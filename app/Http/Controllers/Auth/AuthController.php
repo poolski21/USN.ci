@@ -154,7 +154,7 @@ class AuthController extends Controller
         try {
             $upload = app(CloudinaryService::class)->upload($file->getRealPath(), 'usnci/covers');
 
-            $user->cover_photo = $file->store('cover_photos', 'public');
+            $user->cover_photo = null;
             $user->cover_public_id = $upload['public_id'];
             $user->save();
 
@@ -184,7 +184,7 @@ class AuthController extends Controller
         try {
             $upload = app(CloudinaryService::class)->upload($file->getRealPath(), 'usnci/avatars');
 
-            $user->avatar = $file->store('avatars', 'public');
+            $user->avatar = null;
             $user->avatar_public_id = $upload['public_id'];
             $user->save();
 

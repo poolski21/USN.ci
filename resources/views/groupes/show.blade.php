@@ -114,7 +114,7 @@
                     </div>
                   </div>
                   <p class="text-sm leading-relaxed mb-3" style="color: #2F3A30;">{{ $post->contenu }}</p>
-                  @if($post->media_path)
+                  @if($post->media_url)
                     <div class="mt-3 overflow-hidden rounded-2xl" style="background-color: #F8F2E6;">
                       @if($post->isImage = in_array($post->media_type, ['image/jpeg', 'image/png', 'image/gif', 'image/webp']))
                         <img src="{{ $post->media_url }}" alt="Publication" class="h-auto max-h-96 w-full object-cover">
