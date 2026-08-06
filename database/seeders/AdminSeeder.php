@@ -37,6 +37,10 @@ class AdminSeeder extends Seeder
                 'role' => 'admin',
                 'email_verified_at' => now(),
                 'is_certified' => true,
+                'certification_status' => 'approved',
+                'certification_package' => 'premium',
+                'subscription_plan' => 'premium',
+                'visibility_boost' => 10,
                 'certified_via' => 'admin',
                 'certified_at' => now(),
                 // MySQL TIMESTAMP range ends in 2038, so keep the expiration within that limit.

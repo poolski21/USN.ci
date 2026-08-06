@@ -301,14 +301,27 @@
             · Dernière connexion {{ $user->last_seen->translatedFormat('d F Y H:i') }}
           @endif
         </p>
-        <span class="inline-flex items-center gap-1.5 mt-2 bg-ardoise text-moutarde text-xs font-medium px-2.5 py-1 rounded-md">
-          <i class="ti ti-code text-xs"></i>
-          {{ $user->filiere ?? 'Informatique' }} · {{ $user->niveau ?? 'L2' }}
+        <div class="flex items-center gap-3 mt-2">
+          <span class="inline-flex items-center gap-1.5 bg-ardoise text-moutarde text-xs font-medium px-2.5 py-1 rounded-md">
+            <i class="ti ti-code text-xs"></i>
+            {{ $user->filiere ?? 'Informatique' }} · {{ $user->niveau ?? 'L2' }}
+          </span>
+
           @if($user->is_certified)
-            · <span class="inline-flex items-center gap-1 rounded-full bg-blue-600/10 px-2 py-0.5 text-[10px] font-semibold text-blue-800 ring-1 ring-blue-200">Certifié</span>
-            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-600/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 ring-1 ring-emerald-200">{{ ucfirst($user->subscription_plan ?? 'standard') }}</span>
+            @php
+              $plan = $user->subscription_plan ?? 'standard';
+              $badgeLabel = $plan === 'premium' ? 'Certifié Premium' : 'Certifié Standard';
+              $badgeClasses = $plan === 'premium'
+                ? 'inline-flex items-center gap-1 rounded-full bg-blue-600/10 px-2 py-0.5 text-[10px] font-semibold text-blue-800 ring-1 ring-blue-200'
+                : 'inline-flex items-center gap-1 rounded-full bg-emerald-600/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 ring-1 ring-emerald-200';
+            @endphp
+
+            <span class="{{ $badgeClasses }}">
+              <i class="ti ti-certificate text-[10px]"></i>
+              <span class="ml-1">{{ $badgeLabel }}</span>
+            </span>
           @endif
-        </span>
+        </div>
       </div>
 
       {{-- Boutons action --}}
