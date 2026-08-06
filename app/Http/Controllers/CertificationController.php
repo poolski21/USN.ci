@@ -139,6 +139,7 @@ class CertificationController extends Controller
                     'is_certified' => true,
                     'certified_via' => 'kadevpay',
                     'certified_at' => now(),
+                    'certified_until' => now()->addMonth(),
                 ])->save();
             }
         });
@@ -183,6 +184,7 @@ class CertificationController extends Controller
             'certification_package' => $request->package,
             'certified_via' => 'admin',
             'certified_at' => now(),
+            'certified_until' => now()->addMonth(),
         ])->save();
 
         return redirect()->route('admin.certifications')->with('status', 'La demande a été approuvée.');

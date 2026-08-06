@@ -244,12 +244,13 @@
     <div class="cover-pattern"></div>
     <img src="{{ $user->cover_photo_url }}" alt="Photo de couverture" class="cover-img">
     {{-- Badge vérifié --}}
-    <div class="absolute top-3 right-3 flex items-center gap-1.5 bg-white/10 border border-white/20 text-kraft text-xs px-3 py-1 rounded-lg backdrop-blur-sm">
-      <i class="ti ti-shield-check text-moutarde"></i>
+    <div class="absolute top-3 right-3 flex items-center gap-2 bg-white/10 border border-white/20 text-kraft text-xs px-3 py-1 rounded-lg backdrop-blur-sm">
       @if($user->is_certified)
-        Compte certifié · {{ $user->certified_university ?? $user->universite ?? 'UIST' }}
+        <x-certified-badge label="Certifié" />
+        <span>· {{ $user->certified_university ?? $user->universite ?? 'UIST' }}</span>
       @else
-        Compte standard · {{ $user->universite ?? 'UIST' }}
+        <span class="text-sm font-semibold text-[#5E6E52]">Compte standard</span>
+        <span>· {{ $user->universite ?? 'UIST' }}</span>
       @endif
     </div>
     {{-- Bouton modifier cover (visible si c'est le propre profil) --}}
@@ -317,6 +318,11 @@
             <a href="{{ route('certification.request') }}" class="btn-secondary">
               <i class="ti ti-certificate"></i> Demander un compte certifié
             </a>
+            @if($user->is_certified)
+              <a href="{{ route('official_pages.create') }}" class="btn-secondary">
+                <i class="ti ti-building-skyscraper"></i> Créer une page officielle
+              </a>
+            @endif
             <button class="btn-secondary">
               <i class="ti ti-share"></i> Partager
             </button>

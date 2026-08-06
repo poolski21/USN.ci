@@ -1,26 +1,20 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\Seeders\generated;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
-class AdminSeeder extends Seeder
+class AdminCertificationSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $email = env('ADMIN_EMAIL');
         $password = env('ADMIN_PASSWORD');
 
         if (! $email || ! $password) {
-            $this->command->warn('ADMIN_EMAIL or ADMIN_PASSWORD is not set in .env. Skipping admin seeder.');
+            $this->command->warn('ADMIN_EMAIL or ADMIN_PASSWORD is not set. Skipping admin certification seeder.');
             return;
         }
 
@@ -39,8 +33,7 @@ class AdminSeeder extends Seeder
                 'is_certified' => true,
                 'certified_via' => 'admin',
                 'certified_at' => now(),
-                // MySQL TIMESTAMP range ends in 2038, so keep the expiration within that limit.
-                'certified_until' => now()->addYears(10),
+                'certified_until' => now()->addYears(100),
             ]
         );
     }

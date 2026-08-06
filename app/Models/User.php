@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Models\CertificationRequest;
 use App\Models\FriendRequest;
 use App\Models\Group;
+use App\Models\OfficialPage;
 use App\Models\Post;
 use App\Models\SocialMessage;
 use App\Models\SocialNotification;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'prenom', 'nom', 'matricule', 'handle', 'email', 'password', 'role', 'universite', 'filiere', 'niveau', 'avatar', 'avatar_public_id', 'cover_photo', 'cover_public_id', 'bio', 'cv_url', 'cv_path', 'github', 'private_documents', 'private_friends', 'private_projects', 'last_seen', 'is_certified', 'certification_status', 'certified_university', 'certification_package', 'certified_via', 'certified_at'])]
+#[Fillable(['name', 'prenom', 'nom', 'matricule', 'handle', 'email', 'password', 'role', 'universite', 'filiere', 'niveau', 'avatar', 'avatar_public_id', 'cover_photo', 'cover_public_id', 'bio', 'cv_url', 'cv_path', 'github', 'private_documents', 'private_friends', 'private_projects', 'last_seen', 'is_certified', 'certification_status', 'certified_university', 'certification_package', 'certified_via', 'certified_at', 'certified_until'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -99,6 +100,11 @@ class User extends Authenticatable
         return $this->hasMany(CertificationRequest::class);
     }
 
+    public function officialPages()
+    {
+        return $this->hasMany(OfficialPage::class);
+    }
+
     public function getAvatarUrlAttribute(): string
     {
         if ($this->avatar_public_id) {
@@ -141,6 +147,7 @@ class User extends Authenticatable
             'is_certified' => 'boolean',
             'last_seen' => 'datetime',
             'certified_at' => 'datetime',
+            'certified_until' => 'datetime',
         ];
     }
 }
