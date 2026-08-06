@@ -102,6 +102,10 @@ class AuthController extends Controller
                           ->orWhere('nom', 'like', "%{$q}%")
                           ->orWhere('filiere', 'like', "%{$q}%");
                 })
+                ->orderByDesc('is_certified')
+                ->orderByRaw("(subscription_plan = 'premium') desc")
+                ->orderByDesc('visibility_boost')
+                ->orderBy('name')
                 ->paginate(12)
                 ->withQueryString();
         }

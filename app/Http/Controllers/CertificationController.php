@@ -25,7 +25,7 @@ class CertificationController extends Controller
         ]);
 
         $user = Auth::user();
-        $amount = $validated['package'] === 'premium' ? 45000 : 25000;
+        $amount = $paymentGatewayService->planAmount($validated['package']);
 
         // create a reference and persist the certification request
         $reference = $paymentGatewayService->generateReference();
@@ -135,8 +135,14 @@ class CertificationController extends Controller
 
             $user = $record->user;
             if ($user) {
+                $plan = $record->package;
                 $user->forceFill([
                     'is_certified' => true,
+                    'certification_status' => 'pending',
+                    'certified_university' => $record->university,
+                    'certification_package' => $plan,
+                    'subscription_plan' => $plan,
+                    'visibility_boost' => $plan === 'premium' ? 10 : 0,
                     'certified_via' => 'kadevpay',
                     'certified_at' => now(),
                     'certified_until' => now()->addMonth(),
@@ -177,11 +183,15 @@ class CertificationController extends Controller
         ]);
 
         $certifiedUser = User::findOrFail($request->user_id);
+        $plan = $request->package;
+
         $certifiedUser->forceFill([
             'is_certified' => true,
             'certification_status' => 'approved',
             'certified_university' => $request->university,
-            'certification_package' => $request->package,
+            'certification_package' => $plan,
+            'subscription_plan' => $plan,
+            'visibility_boost' => $plan === 'premium' ? 10 : 0,
             'certified_via' => 'admin',
             'certified_at' => now(),
             'certified_until' => now()->addMonth(),
@@ -209,6 +219,8 @@ class CertificationController extends Controller
             'certification_status' => 'rejected',
             'certified_university' => null,
             'certification_package' => null,
+            'subscription_plan' => 'standard',
+            'visibility_boost' => 0,
         ])->save();
 
         return redirect()->route('admin.certifications')->with('status', 'La demande a été refusée.');

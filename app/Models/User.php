@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'prenom', 'nom', 'matricule', 'handle', 'email', 'password', 'role', 'universite', 'filiere', 'niveau', 'avatar', 'avatar_public_id', 'cover_photo', 'cover_public_id', 'bio', 'cv_url', 'cv_path', 'github', 'private_documents', 'private_friends', 'private_projects', 'last_seen', 'is_certified', 'certification_status', 'certified_university', 'certification_package', 'certified_via', 'certified_at', 'certified_until'])]
+#[Fillable(['name', 'prenom', 'nom', 'matricule', 'handle', 'email', 'password', 'role', 'universite', 'filiere', 'niveau', 'avatar', 'avatar_public_id', 'cover_photo', 'cover_public_id', 'bio', 'cv_url', 'cv_path', 'github', 'private_documents', 'private_friends', 'private_projects', 'last_seen', 'is_certified', 'certification_status', 'certified_university', 'certification_package', 'certification_plan', 'subscription_plan', 'visibility_boost', 'certified_via', 'certified_at', 'certified_until'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -105,6 +105,46 @@ class User extends Authenticatable
         return $this->hasMany(OfficialPage::class);
     }
 
+    public function subscribedOfficialPages()
+    {
+        return $this->belongsToMany(OfficialPage::class, 'official_page_subscriptions', 'user_id', 'official_page_id')->withTimestamps();
+    }
+
+    public function isSubscribedToOfficialPage(OfficialPage $page): bool
+    {
+        return $this->subscribedOfficialPages()->where('official_page_id', $page->id)->exists();
+    }
+
+    public function isStandardSubscription(): bool
+    {
+        return $this->subscription_plan !== 'premium';
+    }
+
+    public function isPremiumSubscription(): bool
+    {
+        return $this->subscription_plan === 'premium';
+    }
+
+    public function maxOfficialPages(): ?int
+    {
+        return $this->isStandardSubscription() ? 3 : null;
+    }
+
+    public function visibilityBoost(): int
+    {
+        return $this->isPremiumSubscription() ? 10 : 0;
+    }
+
+    public function subscriptionLabel(): string
+    {
+        return $this->isPremiumSubscription() ? 'Premium' : 'Standard';
+    }
+
+    public function subscriptionPrice(): int
+    {
+        return $this->isPremiumSubscription() ? 5000 : 2000;
+    }
+
     public function getAvatarUrlAttribute(): string
     {
         if ($this->avatar_public_id) {
@@ -148,6 +188,7 @@ class User extends Authenticatable
             'last_seen' => 'datetime',
             'certified_at' => 'datetime',
             'certified_until' => 'datetime',
+            'visibility_boost' => 'integer',
         ];
     }
 }

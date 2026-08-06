@@ -23,6 +23,10 @@ class OfficialPageController extends Controller
         $user = Auth::user();
         abort_unless($user->is_certified, 403);
 
+        if ($user->isStandardSubscription() && $user->officialPages()->count() >= $user->maxOfficialPages()) {
+            return back()->with('error', 'Limite de 3 pages atteinte, passez au plan Premium pour continuer.');
+        }
+
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -49,14 +53,16 @@ class OfficialPageController extends Controller
 
     public function show(string $slug)
     {
-        $page = OfficialPage::where('slug', $slug)->firstOrFail();
+        $page = OfficialPage::query()->where('slug', '=', $slug)->firstOrFail();
+        $user = Auth::user();
+        $canView = $user && ($user->id === $page->user_id || $user->isSubscribedToOfficialPage($page));
 
-        return view('official_pages.show', compact('page'));
+        return view('official_pages.show', compact('page', 'canView'));
     }
 
     public function edit(string $slug)
     {
-        $page = OfficialPage::where('slug', $slug)->firstOrFail();
+        $page = OfficialPage::query()->where('slug', '=', $slug)->firstOrFail();
         abort_unless(Auth::id() === $page->user_id, 403);
 
         return view('official_pages.edit', compact('page'));
@@ -64,7 +70,7 @@ class OfficialPageController extends Controller
 
     public function update(Request $request, string $slug)
     {
-        $page = OfficialPage::where('slug', $slug)->firstOrFail();
+        $page = OfficialPage::query()->where('slug', '=', $slug)->firstOrFail();
         abort_unless(Auth::id() === $page->user_id, 403);
 
         $data = $request->validate([

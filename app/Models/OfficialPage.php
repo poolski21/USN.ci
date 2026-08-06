@@ -28,6 +28,16 @@ class OfficialPage extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function subscriptions()
+    {
+        return $this->hasMany(OfficialPageSubscription::class);
+    }
+
+    public function subscribers()
+    {
+        return $this->belongsToMany(User::class, 'official_page_subscriptions', 'official_page_id', 'user_id')->withTimestamps();
+    }
+
     public function getCoverImageUrlAttribute(): string
     {
         if ($this->cover_image) {

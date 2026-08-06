@@ -41,16 +41,31 @@
           </div>
         @endif
 
-        <div class="rounded-3xl border border-[#D4CABC] bg-white p-6">
-          <h2 class="text-2xl font-semibold text-[#1F2E26]">À propos</h2>
-          <p class="mt-4 text-sm leading-relaxed text-[#5E6E52]">{{ $page->description ?? 'Aucune description n’a encore été ajoutée pour cette page officielle.' }}</p>
-        </div>
+        @if($canView)
+          <div class="rounded-3xl border border-[#D4CABC] bg-white p-6">
+            <h2 class="text-2xl font-semibold text-[#1F2E26]">À propos</h2>
+            <p class="mt-4 text-sm leading-relaxed text-[#5E6E52]">{{ $page->description ?? 'Aucune description n’a encore été ajoutée pour cette page officielle.' }}</p>
+          </div>
 
-        <div class="rounded-3xl border border-[#D4CABC] bg-white p-6">
-          <h2 class="text-2xl font-semibold text-[#1F2E26]">Contact</h2>
-          <p class="mt-3 text-sm text-[#5E6E52]">Pour contacter cette page officielle, envoyez un message direct à {{ $page->user->prenom }} via son profil.</p>
-          <a href="{{ route('profil.show', $page->user->handle ?? $page->user->id) }}" class="mt-4 inline-flex rounded-2xl bg-[#1F2E26] px-4 py-3 text-sm font-semibold text-white hover:bg-[#15201A]">Voir le profil du propriétaire</a>
-        </div>
+          <div class="rounded-3xl border border-[#D4CABC] bg-white p-6">
+            <h2 class="text-2xl font-semibold text-[#1F2E26]">Contact</h2>
+            <p class="mt-3 text-sm text-[#5E6E52]">Pour contacter cette page officielle, envoyez un message direct à {{ $page->user->prenom }} via son profil.</p>
+            <a href="{{ route('profil.show', $page->user->handle ?? $page->user->id) }}" class="mt-4 inline-flex rounded-2xl bg-[#1F2E26] px-4 py-3 text-sm font-semibold text-white hover:bg-[#15201A]">Voir le profil du propriétaire</a>
+          </div>
+        @else
+          <div class="rounded-3xl border border-[#D4CABC] bg-white p-6 text-center">
+            <h2 class="text-2xl font-semibold text-[#1F2E26]">Accès réservé aux abonnés</h2>
+            <p class="mt-4 text-sm leading-relaxed text-[#5E6E52]">Cette page officielle est réservée aux abonnés. Abonnez-vous pour recevoir toutes les publications et notifications.</p>
+            @auth
+              <form action="{{ route('official_pages.subscription.toggle', $page->slug) }}" method="POST" class="mt-6 inline-flex">
+                @csrf
+                <button type="submit" class="rounded-2xl bg-[#1F2E26] px-5 py-3 text-sm font-semibold text-white hover:bg-[#15201A]">S’abonner</button>
+              </form>
+            @else
+              <a href="{{ route('connexion') }}" class="mt-6 inline-flex rounded-2xl bg-[#1F2E26] px-5 py-3 text-sm font-semibold text-white hover:bg-[#15201A]">Se connecter pour s’abonner</a>
+            @endauth
+          </div>
+        @endif
       </div>
     </div>
   </div>

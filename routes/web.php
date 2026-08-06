@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CertificationController;
 use App\Http\Controllers\Evenement\EvenementController;
 use App\Http\Controllers\Official\OfficialPageController;
+use App\Http\Controllers\Official\OfficialPageSubscriptionController;
 use App\Http\Controllers\SocialController;
 
 Route::get('/', function () {
@@ -83,6 +84,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/pages-officielles/nouveau', [OfficialPageController::class, 'create'])->name('official_pages.create');
     Route::post('/pages-officielles', [OfficialPageController::class, 'store'])->name('official_pages.store');
     Route::get('/pages-officielles/{slug}', [OfficialPageController::class, 'show'])->name('official_pages.show');
+    Route::post('/pages-officielles/{slug}/abonnement', [OfficialPageSubscriptionController::class, 'toggle'])->name('official_pages.subscription.toggle');
     Route::get('/pages-officielles/{slug}/editer', [OfficialPageController::class, 'edit'])->name('official_pages.edit');
     Route::patch('/pages-officielles/{slug}', [OfficialPageController::class, 'update'])->name('official_pages.update');
     Route::get('/profil/{handle?}', [AuthController::class, 'showProfil'])->name('profil.show');

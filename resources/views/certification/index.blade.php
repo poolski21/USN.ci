@@ -6,7 +6,8 @@
 <div class="mx-auto max-w-2xl py-8">
   <div class="p-6 bg-white rounded-lg shadow">
     <h2 class="text-xl font-bold">Paiement de la certification</h2>
-    <p class="mt-2">Montant: {{ number_format($checkout['amount'],0,',',' ') }} {{ $checkout['currency'] }}</p>
+    <p class="mt-2">Forfait : {{ ucfirst($certificationRequest->package) }}</p>
+    <p class="mt-2">Montant : {{ number_format($checkout['amount'],0,',',' ') }} {{ $checkout['currency'] }}</p>
     <button id="kadevpay-button" class="mt-4 px-4 py-2 bg-green-600 text-white rounded">Payer via Kadev Pay</button>
   </div>
 </div>

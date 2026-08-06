@@ -13,6 +13,32 @@ class PaymentGatewayService
         return 'KDV-' . strtoupper(Str::random(10));
     }
 
+    public function planAmount(string $plan): int
+    {
+        return match ($plan) {
+            'premium' => 5000,
+            default => 2000,
+        };
+    }
+
+    public function planDetails(string $plan): array
+    {
+        return [
+            'standard' => [
+                'label' => 'Standard',
+                'price' => 2000,
+                'max_official_pages' => 3,
+                'visibility_boost' => 0,
+            ],
+            'premium' => [
+                'label' => 'Premium',
+                'price' => 5000,
+                'max_official_pages' => null,
+                'visibility_boost' => 10,
+            ],
+        ][$plan] ?? [];
+    }
+
     protected function secretKey(): string
     {
         return config('services.kadevpay.secret_key', '');
