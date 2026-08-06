@@ -242,7 +242,7 @@
   ══════════════════════════════════════ --}}
   <div class="cover-zone rounded-b-[1.5rem]">
     <div class="cover-pattern"></div>
-    @if($user->cover_photo)
+    @if($user->cover_public_id || $user->cover_photo)
       <img src="{{ $user->cover_photo_url }}" alt="Photo de couverture" class="cover-img">
     @endif
     {{-- Badge vérifié --}}
