@@ -550,8 +550,8 @@ class SocialController extends Controller
                 return back()->with('error', 'Impossible de téléverser la pièce jointe.')->withInput();
             }
 
-            $attachmentPath = $file->store('messages', 'public');
-            $attachmentType = null
+            $attachmentPath = null;
+            $attachmentType = $file->getClientMimeType();
             $attachmentName = $file->getClientOriginalName();
         }
 
