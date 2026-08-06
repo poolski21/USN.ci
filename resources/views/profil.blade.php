@@ -242,9 +242,7 @@
   ══════════════════════════════════════ --}}
   <div class="cover-zone rounded-b-[1.5rem]">
     <div class="cover-pattern"></div>
-    @if($user->cover_public_id || $user->cover_photo)
-      <img src="{{ $user->cover_photo_url }}" alt="Photo de couverture" class="cover-img">
-    @endif
+    <img src="{{ $user->cover_photo_url }}" alt="Photo de couverture" class="cover-img">
     {{-- Badge vérifié --}}
     <div class="absolute top-3 right-3 flex items-center gap-1.5 bg-white/10 border border-white/20 text-kraft text-xs px-3 py-1 rounded-lg backdrop-blur-sm">
       <i class="ti ti-shield-check text-moutarde"></i>
@@ -275,11 +273,7 @@
 
       {{-- Avatar --}}
       <div class="avatar-ring relative">
-        @if($user->avatar_url)
           <img src="{{ $user->avatar_url }}" alt="Avatar de {{ $user->prenom }}">
-        @else
-          {{ strtoupper(substr($user->prenom,0,1).substr($user->nom,0,1)) }}
-        @endif
 
         <span class="absolute bottom-0 right-0 inline-flex h-4 w-4 rounded-full ring-2 ring-white {{ $isOnline ? 'bg-emerald-500' : 'bg-red-500' }}" title="{{ $isOnline ? 'En ligne' : 'Hors ligne' }}"></span>
 
