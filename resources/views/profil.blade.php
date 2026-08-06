@@ -315,9 +315,11 @@
                class="btn-primary">
               <i class="ti ti-edit"></i> Modifier le profil
             </a>
-            <a href="{{ route('certification.request') }}" class="btn-secondary">
-              <i class="ti ti-certificate"></i> Demander un compte certifié
-            </a>
+            @unless($user->is_certified)
+              <a href="{{ route('certification.request') }}" class="btn-secondary">
+                <i class="ti ti-certificate"></i> Demander un compte certifié
+              </a>
+            @endunless
             @if($user->is_certified)
               <a href="{{ route('official_pages.create') }}" class="btn-secondary">
                 <i class="ti ti-building-skyscraper"></i> Créer une page officielle
